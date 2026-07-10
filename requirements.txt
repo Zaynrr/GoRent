@@ -1,9 +1,10 @@
 Flask
 Flask-SQLAlchemy
+pymysql==1.1.0
+cryptography
 python-dotenv
 requests
 xhtml2pdf
 cloudinary
 resend
 certifi
-
