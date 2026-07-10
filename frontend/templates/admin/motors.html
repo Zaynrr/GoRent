@@ -1,0 +1,534 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Motor Data - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>Motor Data Management</h1>
+        <p>Kelola katalog motor, upload foto ke Cloudinary, dan atur status motor.</p>
+    </div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <button class="btn btn-primary" onclick="openCategoryModal()">
+            <i class="fas fa-tags"></i> Tambah Kategori
+        </button>
+        <button class="btn btn-primary" onclick="openAddModal()">
+            <i class="fas fa-plus"></i> Tambah Motor Baru
+        </button>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">
+            <i class="fas fa-motorcycle"></i>
+        </div>
+        <div class="stat-info">
+            <p>Total Motor</p>
+            <h3>{{ total_motors }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-info">
+            <p>Tersedia</p>
+            <h3>{{ available_count }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon orange">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="stat-info">
+            <p>Disewa</p>
+            <h3>{{ rented_count }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon pink">
+            <i class="fas fa-wrench"></i>
+        </div>
+        <div class="stat-info">
+            <p>Maintenance</p>
+            <h3>{{ maintenance_count }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="admin-table-container">
+    <div class="admin-table-header">
+        <div class="admin-search-box">
+            <i class="fas fa-search" style="color: var(--text-muted);"></i>
+            <input type="text" id="searchInput" placeholder="Search by name, category, or transmission..." onkeyup="searchTable()">
+        </div>
+        
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <label for="filterSelect" style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">
+                <i class="fas fa-filter" style="color: var(--primary); margin-right: 4px;"></i>
+                Filter:
+            </label>
+            <select id="filterSelect" 
+                    onchange="applyFilter(this.value)"
+                    style="padding: 8px 32px 8px 12px; 
+                        border: 2px solid var(--border-color); 
+                        border-radius: 8px; 
+                        font-size: 14px; 
+                        font-family: var(--font-main);
+                        font-weight: 600;
+                        color: var(--text-main);
+                        background: white;
+                        cursor: pointer;
+                        transition: var(--transition);
+                        appearance: none;
+                        -webkit-appearance: none;
+                        -moz-appearance: none;
+                        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><path fill="%23757575" d="M6 9L1 4h10z"/></svg>');
+                        background-repeat: no-repeat;
+                        background-position: right 10px center;
+                        min-width: 180px;">
+                <option value="all" {% if filter_type == 'all' %}selected{% endif %}>
+                    📋 Semua Motor ({{ total_motors }})
+                </option>
+                <option value="active" {% if filter_type == 'active' %}selected{% endif %}>
+                    ✅ Active ({{ active_count }})
+                </option>
+                <option value="hidden" {% if filter_type == 'hidden' %}selected{% endif %}>
+                    👁️ Hidden ({{ hidden_count }})
+                </option>
+                <option value="maintenance" {% if filter_type == 'maintenance' %}selected{% endif %}>
+                    🔧 Maintenance ({{ maintenance_count }})
+                </option>
+            </select>
+        </div>
+    </div>
+
+    <div class="admin-table-wrapper">
+        <table class="admin-table" id="motorTable">
+            <thead>
+                <tr>
+                    <th>Gambar</th>
+                    <th>Nama Motor</th>
+                    <th>Kategori</th>
+                    <th>CC</th>
+                    <th>Transmisi</th>
+                    <th>Harga Rental</th>
+                    <th>Status Motor</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for motor in motors %}
+                <tr data-name="{{ motor.nama_motor|lower }}" 
+                    data-category="{{ motor.kategori.nama_kategori|lower if motor.kategori else '' }}"
+                    data-transmission="{{ motor.transmisi|lower }}"
+                    data-active="{{ motor.is_active }}">
+                    <td>
+                        {% if motor.foto_motor %}
+                            <img src="{{ motor.foto_motor }}" alt="{{ motor.nama_motor }}" class="motor-thumb" style="cursor: pointer;" onclick="previewImage('{{ motor.foto_motor }}')">
+                        {% else %}
+                            <div class="motor-thumb-placeholder">
+                                <i class="fas fa-motorcycle"></i>
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ motor.nama_motor }}</strong>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                            {{ motor.cc_motor }}cc
+                        </div>
+                    </td>
+                    <td>{{ motor.kategori.nama_kategori if motor.kategori else '-' }}</td>
+                    <td>{{ motor.cc_motor }} cc</td>
+                    <td>{{ motor.transmisi }}</td>
+                    <td><strong>Rp {{ "{:,.0f}".format(motor.harga_sewa) }}</strong>/day</td>
+                    <td>
+                        {% if not motor.is_active %}
+                            <span class="admin-status hidden">
+                                <i class="fas fa-eye-slash"></i> Hidden
+                            </span>
+                        {% elif motor.status_motor == 'Tersedia' %}
+                            <span class="admin-status available">
+                                <i class="fas fa-check-circle"></i> Tersedia
+                            </span>
+                        {% elif motor.status_motor == 'Disewa' %}
+                            <span class="admin-status rented">
+                                <i class="fas fa-clock"></i> Disewa
+                            </span>
+                        {% elif motor.status_motor == 'Maintenance' %}
+                            <span class="admin-status maintenance">
+                                <i class="fas fa-wrench"></i> Maintenance
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="admin-actions">
+                            <button class="admin-btn-icon admin-btn-edit" 
+                                    onclick='openEditModal({
+                                        "id_motor": {{ motor.id_motor }},
+                                        "nama_motor": "{{ motor.nama_motor|e }}",
+                                        "id_kategori": {{ motor.id_kategori or 'null' }},
+                                        "transmisi": "{{ motor.transmisi }}",
+                                        "cc_motor": {{ motor.cc_motor }},
+                                        "harga_sewa": {{ motor.harga_sewa }},
+                                        "status_motor": "{{ motor.status_motor }}",
+                                        "foto_motor": "{{ motor.foto_motor or '' }}"
+                                    })' 
+                                    title="Edit">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            
+                            {% if motor.is_active %}
+                                <button class="admin-btn-icon admin-btn-delete" 
+                                        onclick="toggleStatus({{ motor.id_motor }}, '{{ motor.nama_motor|e }}', 'hide')" 
+                                        title="Hide from catalog">
+                                    <i class="fas fa-eye-slash"></i>
+                                </button>
+                            {% else %}
+                                <button class="admin-btn-icon admin-btn-restore" 
+                                        onclick="toggleStatus({{ motor.id_motor }}, '{{ motor.nama_motor|e }}', 'show')" 
+                                        title="Show in catalog">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            {% endif %}
+                            
+                            <button class="admin-btn-icon" 
+                                    style="background: #ffebee; color: #c62828;"
+                                    onclick="deleteMotor({{ motor.id_motor }}, '{{ motor.nama_motor|e }}')" 
+                                    title="Delete permanently">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                        <i class="fas fa-motorcycle" style="font-size: 64px; display: block; margin-bottom: 16px;"></i>
+                        <h3 style="margin-bottom: 8px;">Data motor tidak ada</h3>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="admin-pagination">
+        <span>
+            Page {{ pagination.page }} of {{ pagination.pages }} 
+            ({{ pagination.total }} motors)
+        </span>
+        <div class="admin-actions">
+            {% if pagination.has_prev %}
+                <a href="{{ url_for('admin.admin_motors', page=pagination.prev_num, filter=filter_type) }}" 
+                class="admin-btn-icon admin-btn-view" 
+                title="Previous Page">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            {% else %}
+                <span class="admin-btn-icon" style="background: #f5f5f5; color: #bdbdbd; cursor: not-allowed;">
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+            {% endif %}
+            
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}
+                    {% if p == pagination.page %}
+                        <span class="admin-btn-icon admin-btn-edit" style="font-weight: 700;">
+                            {{ p }}
+                        </span>
+                    {% else %}
+                        <a href="{{ url_for('admin.admin_motors', page=p, filter=filter_type) }}" 
+                        class="admin-btn-icon admin-btn-view">
+                            {{ p }}
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <span style="padding: 0 8px; color: var(--text-muted);">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+                <a href="{{ url_for('admin.admin_motors', page=pagination.next_num, filter=filter_type) }}" 
+                class="admin-btn-icon admin-btn-view" 
+                title="Next Page">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            {% else %}
+                <span class="admin-btn-icon" style="background: #f5f5f5; color: #bdbdbd; cursor: not-allowed;">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div id="motorModal" class="admin-modal">
+    <div class="admin-modal-content">
+        <div class="admin-modal-header">
+            <h2 id="modalTitle">Add New Motorcycle</h2>
+        </div>
+        <form id="motorForm" method="POST" enctype="multipart/form-data">
+            <div class="admin-form-group">
+                <label>Motor Name *</label>
+                <input type="text" name="nama_motor" id="nama_motor" required placeholder="e.g., Honda Beat FI">
+            </div>
+
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label>Category *</label>
+                    <select name="id_kategori" id="id_kategori" required>
+                        <option value="">-- Select Category --</option>
+                        {% for kategori in kategori %}
+                            <option value="{{ kategori.id_kategori }}">{{ kategori.nama_kategori }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="admin-form-group">
+                    <label>Transmission *</label>
+                    <select name="transmisi" id="transmisi" required>
+                        <option value="Matic">Matic</option>
+                        <option value="Manual">Manual</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label>Engine CC *</label>
+                    <input type="number" name="cc_motor" id="cc_motor" required min="50" max="2000" placeholder="e.g., 150">
+                </div>
+                <div class="admin-form-group">
+                    <label>Rental Price per Day (Rp) *</label>
+                    <input type="number" name="harga_sewa" id="harga_sewa" required min="0" placeholder="e.g., 150000">
+                </div>
+            </div>
+
+            <div class="admin-form-group">
+                <label>Status *</label>
+                <select name="status_motor" id="status_motor" required>
+                    <option value="Tersedia">Tersedia</option>
+                    <option value="Disewa">Disewa</option>
+                    <option value="Maintenance">Maintenance</option>
+                </select>
+            </div>
+
+            <div class="admin-form-group">
+                <label>Motor Image</label>
+                
+                <div id="imagePreviewContainer" style="display: none; margin-bottom: 12px;">
+                    <img id="currentImagePreview" src="" alt="Current Image" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid var(--border-color);">
+                    <small style="color: var(--text-muted); display: block; margin-top: 4px;">
+                        <i class="fas fa-info-circle"></i> Current image from Cloudinary. Upload new to replace.
+                    </small>
+                </div>
+                
+                <input type="file" name="gambar" id="gambar" accept="image/*" onchange="previewNewImage(this)">
+                <small style="color: var(--text-muted); display: block; margin-top: 4px;">
+                    <i class="fas fa-cloud-upload-alt"></i> JPG, PNG, WebP. Max 5MB. Will be uploaded to Cloudinary.
+                </small>
+                
+                <div id="newImagePreviewContainer" style="display: none; margin-top: 12px;">
+                    <img id="newImagePreview" src="" alt="New Image" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid var(--primary);">
+                    <small style="color: var(--primary); display: block; margin-top: 4px;">
+                        <i class="fas fa-check-circle"></i> New image preview (will be uploaded on save)
+                    </small>
+                </div>
+            </div>
+
+            <div class="admin-modal-actions">
+                <button type="button" class="btn" style="background: var(--bg-secondary); color: var(--text-secondary);" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Motorcycle
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="categoryModal" class="admin-modal">
+    <div class="admin-modal-content" style="max-width: 450px;">
+        <div class="admin-modal-header">
+            <h2>Tambah Kategori Baru</h2>
+        </div>
+        <form id="categoryForm" method="POST" action="{{ url_for('admin.admin_kategori_add') }}">
+            <div class="admin-form-group">
+                <label>Nama Kategori *</label>
+                <input type="text" name="nama_kategori" required placeholder="e.g., Yamaha, Sport, Trail">
+            </div>
+            
+            <div class="admin-modal-actions">
+                <button type="button" class="btn" style="background: var(--bg-secondary); color: var(--text-secondary);" onclick="closeCategoryModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Simpan Kategori
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="imagePreviewModal" class="admin-modal" onclick="closeImagePreview()">
+    <div style="max-width: 90%; max-height: 90%; display: flex; align-items: center; justify-content: center;" onclick="event.stopPropagation()">
+        <img id="fullImagePreview" src="" alt="Preview" style="max-width: 100%; max-height: 90vh; border-radius: 12px; box-shadow: var(--shadow-xl);">
+    </div>
+</div>
+
+<form id="toggleStatusForm" method="POST" style="display: none;">
+    <input type="hidden" name="motor_id" id="toggle_motor_id">
+    <input type="hidden" name="action" id="toggle_action">
+</form>
+
+<form id="deleteForm" method="POST" style="display: none;">
+    <input type="hidden" name="motor_id" id="delete_motor_id">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ===== MODAL FUNCTIONS UNTUK MOTOR =====
+    function openAddModal() {
+        document.getElementById('motorModal').classList.add('active');
+        document.getElementById('modalTitle').textContent = 'Add New Motorcycle';
+        document.getElementById('motorForm').action = "{{ url_for('admin.admin_motor_add') }}";
+        document.getElementById('motorForm').reset();
+        document.getElementById('imagePreviewContainer').style.display = 'none';
+        document.getElementById('newImagePreviewContainer').style.display = 'none';
+    }
+
+    function openEditModal(motor) {
+        // --- BLOKIR AKSES EDIT JIKA STATUS DISEWA ---
+        if (motor.status_motor === 'Disewa') {
+            alert(`Akses Ditolak: Motor "${motor.nama_motor}" sedang disewa!\nAnda tidak dapat mengubah data motor ini sampai masa sewa selesai.`);
+            return;
+        }
+
+        document.getElementById('motorModal').classList.add('active');
+        document.getElementById('modalTitle').textContent = 'Edit Motorcycle';
+        document.getElementById('motorForm').action = `/admin/motor/edit/${motor.id_motor}`;
+        
+        // Fill form with motor data
+        document.getElementById('nama_motor').value = motor.nama_motor;
+        document.getElementById('id_kategori').value = motor.id_kategori || '';
+        document.getElementById('transmisi').value = motor.transmisi;
+        document.getElementById('cc_motor').value = motor.cc_motor;
+        document.getElementById('harga_sewa').value = motor.harga_sewa;
+        
+        const statusSelect = document.getElementById('status_motor');
+        statusSelect.value = motor.status_motor;
+        statusSelect.disabled = false;
+
+        // Show current image if exists
+        if (motor.foto_motor) {
+            document.getElementById('currentImagePreview').src = motor.foto_motor;
+            document.getElementById('imagePreviewContainer').style.display = 'block';
+        } else {
+            document.getElementById('imagePreviewContainer').style.display = 'none';
+        }
+        
+        document.getElementById('newImagePreviewContainer').style.display = 'none';
+        document.getElementById('gambar').value = '';
+    }
+
+    function closeModal() {
+        document.getElementById('motorModal').classList.remove('active');
+    }
+
+    // ===== MODAL FUNCTIONS UNTUK KATEGORI =====
+    function openCategoryModal() {
+        document.getElementById('categoryModal').classList.add('active');
+        document.getElementById('categoryForm').reset();
+    }
+
+    function closeCategoryModal() {
+        document.getElementById('categoryModal').classList.remove('active');
+    }
+
+    // ===== IMAGE PREVIEW =====
+    function previewImage(url) {
+        document.getElementById('fullImagePreview').src = url;
+        document.getElementById('imagePreviewModal').classList.add('active');
+    }
+
+    function closeImagePreview() {
+        document.getElementById('imagePreviewModal').classList.remove('active');
+    }
+
+    function previewNewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('newImagePreview').src = e.target.result;
+                document.getElementById('newImagePreviewContainer').style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // ===== STATUS TOGGLE (Hide/Show) =====
+    function toggleStatus(id, name, action) {
+        const message = action === 'hide' 
+            ? `Hide "${name}" from customer catalog?\n\nThe motor data will be kept, but customers won't see it.`
+            : `Show "${name}" in customer catalog?`;
+        
+        if (confirm(message)) {
+            document.getElementById('toggle_motor_id').value = id;
+            document.getElementById('toggle_action').value = action;
+            document.getElementById('toggleStatusForm').action = "{{ url_for('admin.admin_motor_toggle_status') }}";
+            document.getElementById('toggleStatusForm').submit();
+        }
+    }
+
+    // ===== DELETE MOTOR =====
+    function deleteMotor(id, name) {
+        const message = `⚠️ DELETE "${name}" PERMANENTLY?\n\nThis action CANNOT be undone!\n- Motor data will be deleted from database\n- Image will be deleted from Cloudinary\n\nAre you sure?`;
+        
+        if (confirm(message)) {
+            if (confirm('This is your LAST CHANCE. Really delete?')) {
+                document.getElementById('delete_motor_id').value = id;
+                document.getElementById('deleteForm').action = `/admin/motor/delete/${id}`;
+                document.getElementById('deleteForm').submit();
+            }
+        }
+    }
+
+    // ===== SEARCH (CLIENT-SIDE) =====
+    function searchTable() {
+        const input = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#motorTable tbody tr');
+
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name') || '';
+            const category = row.getAttribute('data-category') || '';
+            const transmission = row.getAttribute('data-transmission') || '';
+            
+            if (name.includes(input) || category.includes(input) || transmission.includes(input)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // ===== APPLY FILTER (REDIRECT DENGAN URL PARAMETER) =====
+    function applyFilter(filterType) {
+        window.location.href = `{{ url_for('admin.admin_motors') }}?filter=${filterType}&page=1`;
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        if (event.target.id === 'motorModal') closeModal();
+        if (event.target.id === 'categoryModal') closeCategoryModal();
+        if (event.target.id === 'imagePreviewModal') closeImagePreview();
+    }
+
+    // ESC key to close modals
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+            closeCategoryModal();
+            closeImagePreview();
+        }
+    });
+</script>
+{% endblock %}

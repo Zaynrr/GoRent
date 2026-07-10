@@ -1,0 +1,9 @@
+Flask
+Flask-SQLAlchemy
+python-dotenv
+requests
+xhtml2pdf
+cloudinary
+resend
+certifi
+

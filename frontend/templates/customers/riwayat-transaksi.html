@@ -1,0 +1,633 @@
+{% extends 'customers/base.html' %}
+
+{% block title %}Riwayat Transaksi - GoRent{% endblock %}
+
+{% block head_extra %}
+    <!-- Snap.js Midtrans (WAJIB di-load sebelum script inline) -->
+    <script
+        type="text/javascript"
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key="Mid-client-C5W9gfpEaVQ5qJ6f">
+    </script>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Riwayat Transaksi</h1>
+        <p>Pantau semua pemesanan dan status rental motor kamu</p>
+    </div>
+</section>
+
+<!-- Stats Summary -->
+<section style="padding: 0 0 40px; background: var(--bg-secondary);">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <div class="stat-info">
+                    <p>Total Transaksi</p>
+                    <h3>{{ transactions|length }}</h3>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <p>Pembayaran Sukses</p>
+                    <h3>{{ transactions|selectattr('status_pembayaran', 'equalto', 'success')|list|length }}</h3>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <i class="fas fa-key"></i>
+                </div>
+                <div class="stat-info">
+                    <p>Sedang Disewa</p>
+                    <h3>{{ transactions|selectattr('status_rental', 'equalto', 'Disewa')|list|length }}</h3>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon pink">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div class="stat-info">
+                    <p>Total Pengeluaran</p>
+                    <h3 style="font-size: 24px;">Rp {{ "{:,.0f}".format(total_spent) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Filter Tabs -->
+<section style="padding: 40px 0 20px; background: var(--bg-secondary);">
+    <div class="container">
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;">
+            <button class="filter-tab active" onclick="filterHistory('all', this)">
+                <i class="fas fa-list"></i> Semua
+            </button>
+            <button class="filter-tab" onclick="filterHistory('active', this)">
+                <i class="fas fa-key"></i> Aktif
+            </button>
+            <button class="filter-tab" onclick="filterHistory('completed', this)">
+                <i class="fas fa-check-circle"></i> Selesai
+            </button>
+            <button class="filter-tab" onclick="filterHistory('pending', this)">
+                <i class="fas fa-clock"></i> Pending
+            </button>
+            <button class="filter-tab" onclick="filterHistory('cancelled', this)">
+                <i class="fas fa-times-circle"></i> Dibatalkan
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- Transactions List -->
+<section style="padding: 0 0 80px; background: var(--bg-secondary);">
+    <div class="container">
+        {% if transactions %}
+            <!-- SWIPE HINT - Hanya muncul di mobile -->
+            <div class="swipe-hint">
+                <i class="fas fa-arrows-left-right"></i>
+                <span>Geser ke kiri/kanan untuk lihat transaksi lainnya</span>
+            </div>
+            
+            <!-- CONTAINER CARDS -->
+            <div class="history-cards-container" id="historyCards">
+                {% for t in transactions %}
+                <div class="history-card" 
+                     data-status="{{ t.status_rental }}" 
+                     data-payment="{{ t.status_pembayaran }}"
+                     data-index="{{ loop.index0 }}">
+                    
+                    <!-- Card Header -->
+                    <div class="history-card-header">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; background: rgba(255, 87, 34, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-receipt" style="color: var(--primary);"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: var(--text-muted);">Order ID</div>
+                                <div style="font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; color: var(--primary);">
+                                    {{ t.order_id }}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+                            {% if t.status_pembayaran == 'success' %}
+                                <span class="admin-status success">
+                                    <i class="fas fa-check-circle"></i> Lunas
+                                </span>
+                            {% elif t.status_pembayaran == 'pending' %}
+                                <span class="admin-status pending">
+                                    <i class="fas fa-clock"></i> Menunggu Pembayaran
+                                </span>
+                            {% elif t.status_pembayaran == 'cancelled' %}
+                                <span class="admin-status failed">
+                                    <i class="fas fa-times-circle"></i> Dibatalkan
+                                </span>
+                            {% elif t.status_pembayaran == 'failed' %}
+                                <span class="admin-status failed">
+                                    <i class="fas fa-exclamation-circle"></i> Gagal
+                                </span>
+                            {% else %}
+                                <span class="admin-status">{{ t.status_pembayaran }}</span>
+                            {% endif %}
+                            
+                            {% if t.status_rental == 'Disewa' %}
+                                <span class="admin-status rented">
+                                    <i class="fas fa-key"></i> Disewa
+                                </span>
+                            {% elif t.status_rental == 'Dikembalikan' %}
+                                <span class="admin-status available">
+                                    <i class="fas fa-check-circle"></i> Selesai
+                                </span>
+                            {% elif t.status_rental == 'Dibatalkan' %}
+                                <span class="admin-status failed">
+                                    <i class="fas fa-ban"></i> Dibatalkan
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Card Body -->
+                    <div class="history-card-body">
+                        <!-- Motor Info -->
+                        <div class="history-motor-info">
+                            {% if t.motor.foto_motor %}
+                                <img src="{{ t.motor.foto_motor }}" alt="{{ t.motor.nama_motor }}">
+                            {% else %}
+                                <div style="width: 100px; height: 100px; background: var(--bg-secondary); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-motorcycle" style="font-size: 32px; color: var(--text-muted);"></i>
+                                </div>
+                            {% endif %}
+                            <div class="history-motor-details">
+                                <h3>{{ t.motor.nama_motor }}</h3>
+                                <div class="history-specs">
+                                    <span><i class="fas fa-cogs"></i> {{ t.motor.cc_motor }}cc</span>
+                                    <span><i class="fas fa-cog"></i> {{ t.motor.transmisi }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Rental Details -->
+                        <div class="history-details-grid">
+                            <div class="history-detail-item">
+                                <div class="history-detail-label">
+                                    <i class="fas fa-calendar-check"></i> Tanggal Sewa
+                                </div>
+                                <div class="history-detail-value">
+                                    {{ t.tgl_sewa.strftime('%d %b %Y') }}
+                                </div>
+                            </div>
+                            <div class="history-detail-item">
+                                <div class="history-detail-label">
+                                    <i class="fas fa-calendar-times"></i> Tanggal Kembali
+                                </div>
+                                <div class="history-detail-value">
+                                    {{ t.tgl_kembali.strftime('%d %b %Y') }}
+                                </div>
+                            </div>
+                            <div class="history-detail-item">
+                                <div class="history-detail-label">
+                                    <i class="fas fa-clock"></i> Durasi
+                                </div>
+                                <div class="history-detail-value">
+                                    {{ t.total_hari }} hari
+                                </div>
+                            </div>
+                            <div class="history-detail-item highlight">
+                                <div class="history-detail-label">
+                                    <i class="fas fa-money-bill-wave"></i> Total
+                                </div>
+                                <div class="history-detail-value">
+                                    Rp {{ "{:,.0f}".format(t.total_harga) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card Footer -->
+                    <div class="history-card-footer">
+                        <div style="font-size: 12px; color: var(--text-muted);">
+                            {% if t.status_pembayaran == 'success' and t.status_rental == 'Disewa' %}
+                                <i class="fas fa-info-circle"></i> Motor sedang dalam masa sewa
+                            {% elif t.status_pembayaran == 'success' and t.status_rental == 'Dikembalikan' %}
+                                <i class="fas fa-info-circle"></i> Transaksi telah selesai
+                            {% elif t.status_pembayaran == 'pending' %}
+                                {% if t.waktu_expired %}
+                                    <span style="color: #ef6c00; font-weight: 600;">
+                                        <i class="fas fa-clock"></i> Bayar sebelum: {{ t.waktu_expired.strftime('%d %b %Y, %H:%M') }} WIB
+                                    </span>
+                                {% else %}
+                                    <span style="color: #ef6c00; font-weight: 600;">
+                                        <i class="fas fa-clock"></i> Menunggu pembayaran
+                                    </span>
+                                {% endif %}
+                            {% elif t.status_pembayaran == 'cancelled' %}
+                                <i class="fas fa-info-circle"></i> ❌ Pesanan dibatalkan secara permanen
+                            {% elif t.status_pembayaran == 'failed' %}
+                                <i class="fas fa-info-circle"></i> ❌ Pembayaran gagal - Silakan coba checkout ulang
+                            {% else %}
+                                <i class="fas fa-info-circle"></i> Status: {{ t.status_pembayaran }}
+                            {% endif %}
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <!-- Tombol Lihat Detail -->
+                            <button class="btn btn-sm" 
+                                    style="background: var(--bg-secondary); color: var(--text-secondary);"
+                                    onclick="viewTransactionDetail({{ t.id_transaksi }})">
+                                <i class="fas fa-eye"></i> Detail
+                            </button>
+                            
+                            <!-- Tombol Bayar & Batal HANYA untuk PENDING -->
+                            {% if t.status_pembayaran == 'pending' %}
+                                <button class="btn btn-sm btn-primary" 
+                                        onclick="payAgain('{{ t.snap_token }}')">
+                                    <i class="fas fa-credit-card"></i> Bayar Sekarang
+                                </button>
+                                <button class="btn btn-sm" 
+                                        style="background: #ffebee; color: #c62828; border: 1px solid #ef9a9a;"
+                                        onclick="cancelTransaction('{{ t.order_id }}')">
+                                    <i class="fas fa-times"></i> Batalkan
+                                </button>
+                            {% endif %}
+                            
+                            <!-- Tombol Sewa Lagi untuk CANCELLED dan FAILED -->
+                            {% if t.status_pembayaran in ['cancelled', 'failed'] %}
+                                <a href="/motors" class="btn btn-sm" 
+                                style="background: var(--primary); color: white;">
+                                    <i class="fas fa-motorcycle"></i> Sewa Lagi
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- PAGE INDICATOR DOTS
+            <div class="page-indicator" id="pageIndicator">
+                {% for t in transactions %}
+                <div class="page-dot {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}"></div>
+                {% endfor %}
+            </div> -->
+            
+        {% else %}
+            <!-- Empty State -->
+            <div style="text-align: center; padding: 80px 20px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color);">
+                <div style="width: 100px; height: 100px; background: rgba(255, 87, 34, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                    <i class="fas fa-receipt" style="font-size: 48px; color: var(--primary);"></i>
+                </div>
+                <h3 style="font-size: 24px; font-weight: 800; color: var(--text-main); margin-bottom: 8px;">
+                    Belum Ada Transaksi
+                </h3>
+                <p style="color: var(--text-muted); margin-bottom: 24px;">
+                    Kamu belum memiliki riwayat transaksi. Yuk, sewa motor pertamamu!
+                </p>
+                <a href="/motors" class="btn btn-primary">
+                    <i class="fas fa-motorcycle"></i> Lihat Motor Tersedia
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Modal Detail Transaksi -->
+<div id="detailModal" class="motor-popup-overlay" onclick="closeDetailModal()">
+    <div class="motor-popup-content" 
+         style="max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; text-align: left;" 
+         onclick="event.stopPropagation()">
+        
+        <!-- HEADER (FIXED DI ATAS) -->
+        <div style="text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); flex-shrink: 0;">
+            <div class="motor-popup-icon rented" style="margin: 0 auto 16px;">
+                <i class="fas fa-receipt"></i>
+            </div>
+            <h2 style="font-size: 22px; margin-bottom: 6px;">Detail Transaksi</h2>
+            <p style="color: var(--text-muted); font-size: 14px; margin: 0;">Informasi lengkap pemesanan kamu</p>
+        </div>
+        
+        <!-- CONTENT (SCROLLABLE DI TENGAH) -->
+        <div id="detailContent" style="flex: 1; overflow-y: auto; padding-right: 8px; margin-right: -8px;">
+            <!-- Konten akan diisi oleh JavaScript -->
+        </div>
+        
+        <!-- FOOTER (FIXED DI BAWAH) -->
+        <div style="text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color); flex-shrink: 0;">
+            <button class="btn btn-primary" onclick="closeDetailModal()">
+                <i class="fas fa-times"></i> Tutup
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Data transaksi untuk modal detail
+    const transactionsData = {
+        {% for t in transactions %}
+        "{{ t.id_transaksi }}": {
+            orderId: "{{ t.order_id|e }}",
+            motor: "{{ t.motor.nama_motor|e }}",
+            customer: "{{ t.customer.nama|e }}",
+            email: "{{ t.customer.email|e }}",
+            phone: "{{ t.customer.no_hp|e }}",
+            startDate: "{{ t.tgl_sewa.strftime('%d %B %Y') }}",
+            endDate: "{{ t.tgl_kembali.strftime('%d %B %Y') }}",
+            duration: "{{ t.total_hari }} hari",
+            total: {{ t.total_harga }},
+            totalFormatted: "Rp {{ '{:,.0f}'.format(t.total_harga) }}",
+            paymentStatus: "{{ t.status_pembayaran }}",
+            rentalStatus: "{{ t.status_rental }}",
+            condition: "{{ t.kondisi_motor or 'Tidak Ada Kerusakan' }}",
+            ktpStatus: "{{ t.status_verifikasi_ktp }}",
+            voucherCode: "{{ t.voucher.kode_voucher if t.voucher else '' }}",
+            nominalDiskon: {{ t.nominal_diskon or 0 }},
+            subtotal: {{ (t.total_harga or 0) + (t.nominal_diskon or 0) }},
+            subtotalFormatted: "Rp {{ '{:,.0f}'.format((t.total_harga or 0) + (t.nominal_diskon or 0)) }}",
+            diskonFormatted: "Rp {{ '{:,.0f}'.format(t.nominal_diskon or 0) }}",
+            expiryTime: "{{ t.waktu_expired.strftime('%d %B %Y, %H:%M WIB') if t.waktu_expired else '' }}"
+        },
+        {% endfor %}
+    };
+    
+    // Filter history
+    function filterHistory(type, btn) {
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        btn.classList.add('active');
+        
+        const cards = document.querySelectorAll('.history-card');
+        cards.forEach(card => {
+            const status = card.getAttribute('data-status');
+            const payment = card.getAttribute('data-payment');
+            
+            if (type === 'all') {
+                card.style.display = '';
+            } else if (type === 'active' && status === 'Disewa') {
+                card.style.display = '';
+            } else if (type === 'completed' && status === 'Dikembalikan') {
+                card.style.display = '';
+            } else if (type === 'pending' && payment === 'pending') {
+                card.style.display = '';
+            } else if (type === 'cancelled' && (payment === 'cancelled' || status === 'Dibatalkan')) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+    
+    // View transaction detail
+    function viewTransactionDetail(id) {
+        const data = transactionsData[id];
+        if (!data) return;
+
+        let pendingAlert = '';
+        if (data.paymentStatus === 'pending') {
+            const expDisplay = data.expiryTime ? data.expiryTime : 'Menunggu data dari sistem...';
+            pendingAlert = `
+                <div style="background: #fff3e0; border: 1px solid #ffcc80; padding: 12px; border-radius: 8px; margin-bottom: 16px; text-align: center;">
+                    <strong style="color: #ef6c00;"><i class="fas fa-clock"></i> Menunggu Pembayaran</strong>
+                    <p style="color: #d32f2f; margin: 4px 0 0 0; font-size: 14px; font-weight: bold;">
+                        Batas Waktu: ${expDisplay}
+                    </p>
+                </div>
+            `;
+        }
+        
+        let voucherSection = '';
+        
+        if (data.voucherCode) {
+            // Ada voucher - tampilkan subtotal, voucher badge, dan diskon
+            voucherSection = `
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <strong style="color: var(--text-muted); font-size: 13px;">Subtotal:</strong>
+                    <span style="text-decoration: line-through; color: #757575;">${data.subtotalFormatted}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: #fff3e0; border-radius: 8px; border: 1px solid #ffcc80;">
+                    <strong style="color: #ef6c00; font-size: 13px;">🎟️ Voucher:</strong>
+                    <span style="font-family: 'Courier New', monospace; font-weight: 700; color: #ef6c00;">${data.voucherCode}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: #e8f5e9; border-radius: 8px; border: 1px solid #a5d6a7;">
+                    <strong style="color: #2e7d32; font-size: 13px;">💸 Diskon:</strong>
+                    <span style="color: #2e7d32; font-weight: 700;">- ${data.diskonFormatted}</span>
+                </div>
+            `;
+        } else {
+            // Tidak ada voucher - tampilkan "-"
+            voucherSection = `
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <strong style="color: var(--text-muted); font-size: 13px;">🎟️ Voucher:</strong>
+                    <span style="color: #757575;">-</span>
+                </div>
+            `;
+        }
+        
+        const html = `
+            <div style="display: grid; gap: 12px;">
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <strong style="color: var(--text-muted); font-size: 13px;">Order ID:</strong>
+                    <span style="font-family: 'Courier New', monospace; font-size: 13px; color: var(--primary); font-weight: 700;">${data.orderId}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <strong style="color: var(--text-muted); font-size: 13px;">Motor:</strong>
+                    <span>${data.motor}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <strong style="color: var(--text-muted); font-size: 13px;">Tanggal Sewa:</strong>
+                    <span>${data.startDate}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <strong style="color: var(--text-muted); font-size: 13px;">Tanggal Kembali:</strong>
+                    <span>${data.endDate}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <strong style="color: var(--text-muted); font-size: 13px;">Durasi:</strong>
+                    <span>${data.duration}</span>
+                </div>
+                
+                ${voucherSection}
+                
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: rgba(255, 87, 34, 0.1); border-radius: 8px; border: 1px solid rgba(255, 87, 34, 0.2);">
+                    <strong style="color: var(--text-muted); font-size: 13px;">Total Bayar:</strong>
+                    <span style="color: var(--primary); font-weight: 800; font-size: 16px;">${data.totalFormatted}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <strong style="color: var(--text-muted); font-size: 13px;">Status Bayar:</strong>
+                    <span style="text-transform: capitalize;">${data.paymentStatus}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <strong style="color: var(--text-muted); font-size: 13px;">Status Rental:</strong>
+                    <span>${data.rentalStatus}</span>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('detailContent').innerHTML = html;
+        document.getElementById('detailModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeDetailModal() {
+        document.getElementById('detailModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    // Close modal with ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDetailModal();
+        }
+    });
+
+    // ========================================
+    // BAYAR ULANG DARI RIWAYAT
+    // ========================================
+    function payAgain(snapToken) {
+        // Cek jika token kosong/None
+        if (!snapToken || snapToken === 'None' || snapToken === '') {
+            alert('❌ Token pembayaran tidak ditemukan. Silakan batalkan pesanan ini dan lakukan pemesanan (checkout) ulang.');
+            return;
+        }
+
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+        
+        // Cek apakah library snap JS dari Midtrans sudah berhasil dimuat
+        if (typeof window.snap === 'undefined') {
+            alert('❌ Menunggu koneksi ke sistem pembayaran. Silakan tunggu sebentar atau refresh halaman.');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            return;
+        }
+        
+        // Buka langsung popup Snap pakai token dari database
+        window.snap.pay(snapToken, {
+            onSuccess: function(result) {
+                console.log('✅ Pembayaran berhasil');
+                window.location.href = `/payment-success?order_id=${result.order_id}`;
+            },
+            onPending: function(result) {
+                console.log('⏳ Menunggu pembayaran');
+                window.location.href = `/payment-success?order_id=${result.order_id}`;
+            },
+            onError: function(result) {
+                alert('❌ Pembayaran gagal. Silakan coba lagi.');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            },
+            onClose: function() {
+                console.log('⚠️ User menutup popup');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    }
+    
+    // ========================================
+    // CANCEL TRANSACTION - PERMANEN (dari riwayat)
+    // ========================================
+    function cancelTransaction(orderId) {
+        if (!confirm('⚠️ PERHATIAN!\n\n' +
+                    'Batalkan pesanan ini secara PERMANEN?\n\n' +
+                    '• Motor dikembalikan ke katalog\n' +
+                    '• TIDAK bisa bayar ulang pesanan ini\n' +
+                    '• Harus checkout ulang untuk sewa motor\n\n' +
+                    'Lanjutkan?')) {
+            return;
+        }
+        
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membatalkan...';
+        
+        fetch(`/api/cancel-transaction/${orderId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Pesanan dibatalkan permanen.\n\nSilakan checkout ulang jika ingin sewa motor lagi.');
+                window.location.reload();
+            } else {
+                alert('❌ Gagal: ' + data.error);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ Terjadi kesalahan koneksi');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+
+        // ========================================
+        // PAGE INDICATOR (Mobile Swipe)
+        // ========================================
+        (function() {
+            const container = document.getElementById('historyCards');
+            const indicator = document.getElementById('pageIndicator');
+            
+            if (!container || !indicator) return;
+            
+            const cards = container.querySelectorAll('.history-card');
+            const dots = indicator.querySelectorAll('.page-dot');
+            
+            if (cards.length === 0 || dots.length === 0) return;
+            
+            // Update active dot saat scroll
+            container.addEventListener('scroll', function() {
+                const scrollLeft = container.scrollLeft;
+                const cardWidth = cards[0].offsetWidth + 16; // width + gap
+                const activeIndex = Math.round(scrollLeft / cardWidth);
+                
+                dots.forEach((dot, index) => {
+                    if (index === activeIndex) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                });
+            });
+            
+            // // Klik dot untuk scroll ke card
+            // dots.forEach((dot, index) => {
+            //     dot.addEventListener('click', function() {
+            //         const cardWidth = cards[0].offsetWidth + 16;
+            //         container.scrollTo({
+            //             left: cardWidth * index,
+            //             behavior: 'smooth'
+            //         });
+            //     });
+            // });
+            
+            // Sembunyikan swipe hint setelah 5 detik
+            const swipeHint = document.querySelector('.swipe-hint');
+            if (swipeHint) {
+                setTimeout(() => {
+                    swipeHint.style.transition = 'opacity 0.5s';
+                    swipeHint.style.opacity = '0';
+                    setTimeout(() => {
+                        swipeHint.style.display = 'none';
+                    }, 500);
+                }, 5000);
+            }
+        })();
+    }
+</script>
+{% endblock %}

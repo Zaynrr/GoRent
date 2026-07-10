@@ -1,0 +1,198 @@
+{% extends 'customers/base.html' %}
+
+{% block title %}GoRent - Sewa Motor Premium{% endblock %}
+
+{% block content %}
+<!-- ===== HERO SECTION ===== -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="fas fa-star"></i>
+                <span>#1 Rental Motor Terpercaya</span>
+            </div>
+            
+            <h1 class="hero-title">
+                Jelajahi Kota dengan <br>
+                <span class="text-gradient">Motor Impianmu</span>
+            </h1>
+            
+            <p class="hero-subtitle">
+                Sewa motor premium dengan proses cepat dan armada terawat. Nikmati pengalaman berkendara terbaik bersama GoRent.
+            </p>
+            
+            <div class="hero-cta">
+                <button class="btn btn-primary btn-lg" onclick="window.location.href='/motors'">
+                    <i class="fas fa-motorcycle"></i>
+                    Cari Motor
+                </button>
+                <button class="btn btn-ghost btn-lg" onclick="document.getElementById('layanan').scrollIntoView({behavior: 'smooth'})">
+                    <i class="fas fa-list"></i>
+                    Layanan
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== LAYANAN KAMI - SWIPEABLE ===== -->
+<section class="services-section" id="layanan">
+    <div class="container">
+        <div class="section-header fade-in">
+            <div class="section-badge">
+                <i class="fas fa-concierge-bell"></i>
+                <span>Layanan Kami</span>
+            </div>
+            <h2 class="section-title">Layanan Kami</h2>
+        </div>
+        
+        <!-- Swipeable Services -->
+        <div class="services-swipe fade-in">
+            <div class="service-card">
+                <div class="service-icon">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <h3>Sewa Harian</h3>
+                <p>Sewa motor untuk kebutuhan harian dengan harga terjangkau. Cocok untuk perjalanan singkat atau kebutuhan mendadak.</p>
+            </div>
+            
+            <!-- Sewa Mingguan -->
+            <div class="service-card">
+                <div class="service-icon">
+                    <i class="fas fa-calendar-week"></i>
+                </div>
+                <h3>Sewa Mingguan</h3>
+                <p>Paket sewa 7 hari dengan harga lebih hemat. Perfect untuk liburan atau proyek jangka pendek.</p>
+            </div>
+            
+            <!-- Sewa Bulanan -->
+            <div class="service-card">
+                <div class="service-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <h3>Sewa Bulanan</h3>
+                <p>Sewa jangka panjang dengan diskon spesial hingga 30%. Solusi terbaik untuk kebutuhan rutin Anda.</p>
+            </div>
+            
+            <!-- Support 24/7 -->
+            <div class="service-card">
+                <div class="service-icon">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h3>Support 24/7</h3>
+                <p>Tim kami siap membantu Anda 24 jam nonstop. Bantuan darurat atau pertanyaan, kami siap melayani.</p>
+            </div>
+        </div>
+        
+        <!-- Swipe Indicator -->
+        <div class="swipe-indicator">
+            <i class="fas fa-arrow-left"></i>
+            <i class="fas fa-arrow-right"></i>
+            <span style="margin: 0 8px;">Swipe untuk melihat lebih</span>
+            <i class="fas fa-arrow-left"></i>
+            <i class="fas fa-arrow-right"></i>
+        </div>
+    </div>
+</section>
+
+<!-- ===== CATEGORY BENTO GRID ===== -->
+<section class="category-section">
+    <div class="container">
+        <div class="category-header fade-in">
+            <h2>Explore by Category</h2>
+            <p>Choose the perfect machine for your next adventure.</p>
+        </div>
+        
+        <div class="bento-grid">
+            <a href="/motors?transmission=Matic" class="bento-card yamaha-card fade-in">
+                <img src="https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800&h=500&fit=crop" alt="Yamaha">
+                <div class="card-overlay">
+                    <h3>Matic</h3>
+                    <p>Praktis, nyaman, dan cocok untuk jalanan perkotaan.</p>
+                </div>
+            </a>
+
+            <a href="/motors?transmission=Manual" class="bento-card honda-card fade-in">
+                <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&h=500&fit=crop" alt="Honda">
+                <div class="card-overlay">
+                    <h3>Manual</h3>
+                    <p>Performa maksimal dengan kendali penuh di tangan Anda.</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ===== CTA SECTION ===== -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content fade-in">
+            <h2>Siap Untuk Mulai Petualangan?</h2>
+            <p>
+                Bergabunglah dengan ribuan customer puas kami dan rasakan pengalaman sewa motor terbaik. Booking sekarang!
+            </p>
+            <div class="cta-buttons">
+                <a href="customers/motors" class="btn-cta-primary">
+                    <i class="fas fa-motorcycle"></i>
+                    Sewa Motor Sekarang
+                </a>
+                <a href="/register" class="btn-cta-secondary">
+                    <i class="fas fa-user-plus"></i>
+                    Daftar Gratis
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // ===== SCROLL ANIMATIONS =====
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, observerOptions);
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+        
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"], button[onclick*="scrollIntoView"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                const targetId = this.getAttribute('onclick') ? 
+                    this.getAttribute('onclick').match(/'#(.+?)'/)[1] : 
+                    this.getAttribute('href').substring(1);
+                
+                const target = document.getElementById(targetId);
+                if (target) {
+                    e.preventDefault();
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // Parallax effect for hero
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const hero = document.querySelector('.hero');
+            if (hero && scrolled < 800) {
+                hero.style.transform = `translateY(${scrolled * 0.3}px)`;
+            }
+        });
+    });
+</script>
+{% endblock %}

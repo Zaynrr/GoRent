@@ -1,0 +1,10 @@
+# Menyembunyikan file kredensial dan environment variables
+.env
+
+# Menyembunyikan folder cache bawaan Python
+__pycache__/
+*.pyc
+
+# Menyembunyikan folder virtual environment (jika kamu pakai)
+venv/
+env/

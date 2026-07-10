@@ -1,0 +1,617 @@
+{% extends 'customers/base.html' %}
+
+{% block title %}Checkout - GoRent{% endblock %}
+
+{% block head_extra %}
+    <!-- Snap.js Midtrans -->
+    <script
+        type="text/javascript"
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key="Mid-client-C5W9gfpEaVQ5qJ6f">
+    </script>
+{% endblock %}
+
+{% block content %}
+    <section class="checkout-section">
+        <div class="container">
+            <div class="checkout-back">
+                <a href="/motors" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back to details
+                </a>
+            </div>
+
+            <div class="checkout-header">
+                <h1>Detail Pemesanan</h1>
+                <p>Selesaikan detail pemesanan anda untuk melanjutkan pembayaran</p>
+            </div>
+
+            <div class="checkout-wrapper">
+                <div class="checkout-form-container">
+                    <form class="checkout-form" id="checkoutForm">
+                        <div class="form-section">
+                            <div class="section-header">
+                                <i class="fas fa-user"></i>
+                                <h3>Rider Details</h3>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="fullName">Nama Lengkap</label>
+                                <input type="text" id="fullName" name="fullName" 
+                                       value="{{ current_user.nama if current_user else '' }}" 
+                                       placeholder="John Doe" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" name="email" 
+                                       value="{{ current_user.email if current_user else '' }}"
+                                       placeholder="john.doe@example.com" required>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="startDate">Tanggal Mulai Rental</label>
+                                    <input type="date" id="startDate" name="startDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="endDate">Tanggal Selesai Rental</label>
+                                    <input type="date" id="endDate" name="endDate" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phone">Nomor HP</label>
+                                <input type="tel" id="phone" name="phone" 
+                                       value="{{ current_user.no_hp if current_user else '' }}"
+                                       placeholder="+62 812-3456-7890" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Upload Foto KTP *</label>
+                                <div class="file-upload-wrapper">
+                                    <input type="file" id="ktp" name="ktp" accept="image/*" required onchange="previewFile(this)">
+                                    <div class="file-upload-area" id="fileUploadArea">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <p>Klik atau drag untuk upload KTP</p>
+                                        <span class="file-name" id="fileName"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="terms-text">
+                            By clicking confirm, you agree to our <a href="#">Terms of Service</a>
+                        </p>
+                    </form>
+                </div>
+
+                <div class="checkout-summary">
+                    <div class="summary-card">
+                        <div class="summary-image">
+                            <img src="" alt="Motor" id="motorImage">
+                        </div>
+                        
+                        <div class="summary-details">
+                            <h3 id="motorName">Loading...</h3>
+                            <p class="summary-dates">
+                                <i class="fas fa-calendar"></i>
+                                <span id="rentalPeriod">Pilih tanggal rental</span>
+                            </p>
+                        </div>
+
+                        <!-- BAGIAN VOUCHER (AUTO APPLY) -->
+                        <div>
+                            <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; display: block;">
+                                <i class="fas fa-ticket-alt" style="color: var(--primary);"></i> Kode Voucher
+                            </label>
+                            <input type="text" id="voucherCode" placeholder="Kode voucher (cth: GORENT50)" 
+                                style="width: 100%; padding: 12px 16px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; text-transform: uppercase; transition: border-color 0.3s;">
+                            <div id="voucherMessage" style="margin-top: 8px; font-size: 12px; font-weight: 600;"></div>
+                        </div>
+
+                        <div class="summary-pricing">
+                            <div class="price-row">
+                                <span>Rental (<span id="daysCount">0 hari</span>)</span>
+                                <span id="rentalPrice">Rp 0</span>
+                            </div>
+                            
+                            <!-- Baris Diskon (Hidden by default) -->
+                            <div class="price-row" id="discountRow" style="display: none; color: #00e676;">
+                                <span><i class="fas fa-tag"></i> Diskon Voucher</span>
+                                <span id="discountPrice">- Rp 0</span>
+                            </div>
+                            
+                            <div class="price-divider"></div>
+                            <div class="price-row total">
+                                <span>Total</span>
+                                <span id="totalPrice">Rp 0</span>
+                            </div>
+                        </div>
+
+                        <button type="button" id="bayar" class="btn-confirm" onclick="payment()">
+                            <span id="btnText">Bayar Sekarang</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    'use strict';
+
+    let selectedMotor = null;
+    let motorPricePerDay = 0;
+    let currentRentalTotal = 0;  
+    
+    let appliedVoucher = {
+        code: null,
+        discount: 0,
+        finalPrice: 0
+    };
+    
+    let voucherCheckTimeout;
+    
+    // Load motor data
+    function loadMotorData() {
+        const motorData = localStorage.getItem('selectedMotor');
+        
+        if (motorData) {
+            selectedMotor = JSON.parse(motorData);
+            motorPricePerDay = selectedMotor.price;
+            
+            document.getElementById('motorName').textContent = selectedMotor.name;
+            document.getElementById('motorImage').src = selectedMotor.image;
+            
+            console.log('✅ Motor data loaded:', selectedMotor.name);
+        } else {
+            alert('Silakan pilih motor terlebih dahulu!');
+            window.location.href = '/motors';
+        }
+    }
+    
+    function formatRupiah(amount) {
+        if (amount >= 1000000) {
+            const jt = (amount / 1000000).toFixed(1);
+            return 'Rp ' + (jt.endsWith('.0') ? jt.slice(0, -2) : jt) + ' Jt';
+        }
+        return 'Rp ' + amount.toLocaleString('id-ID', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+    }
+    
+    // Hitung rental
+    function calculateRental() {
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        
+        if (!startDateInput || !endDateInput) return;
+        
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+        
+        if (startDate && endDate && motorPricePerDay) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+            
+            document.getElementById('daysCount').textContent = `${diffDays} hari`;
+            document.getElementById('rentalPeriod').textContent = 
+                `${start.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} - ${end.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+            const totalPrice = diffDays * motorPricePerDay;
+            currentRentalTotal = totalPrice;
+            
+            console.log('💰 Harga dihitung:', {
+                hargaPerHari: motorPricePerDay,
+                jumlahHari: diffDays,
+                totalAsli: totalPrice,
+                totalTampil: formatRupiah(totalPrice)
+            });
+            
+            document.getElementById('rentalPrice').textContent = formatRupiah(totalPrice);
+            document.getElementById('totalPrice').textContent = formatRupiah(totalPrice);
+            resetVoucher();
+        }
+    }
+    
+    // Fitur voucher
+    function autoApplyVoucher() {
+        const codeInput = document.getElementById('voucherCode');
+        const code = codeInput.value.trim().toUpperCase();
+        
+        if (voucherCheckTimeout) {
+            clearTimeout(voucherCheckTimeout);
+        }
+        
+        if (!code) {
+            window.resetVoucher();
+            return;
+        }
+        
+        voucherCheckTimeout = setTimeout(() => {
+            checkVoucherCode(code);
+        }, 500);
+    }
+    
+    function checkVoucherCode(code) {
+        const codeInput = document.getElementById('voucherCode');
+        const msg = document.getElementById('voucherMessage');
+        
+        const currentTotal = currentRentalTotal;
+        
+        console.log('🔍 Cek voucher:', code);
+        console.log('💰 Total harga asli:', currentTotal);
+        
+        if (currentTotal <= 0) {
+            msg.style.color = '#c62828';
+            msg.textContent = '❌ Pilih tanggal rental terlebih dahulu';
+            return;
+        }
+        
+        codeInput.style.borderColor = '#ff9800';
+        msg.style.color = '#ff9800';
+        msg.textContent = '⏳ Memeriksa voucher...';
+        
+        fetch('/api/check-voucher', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: code, total_price: currentTotal })
+        })
+        .then(response => response.json())
+        .then(data => {
+            codeInput.style.borderColor = '';
+            
+            console.log('📥 Response dari server:', data);
+            
+            if (data.success) {
+                appliedVoucher = {
+                    code: code,
+                    discount: data.discount_amount,
+                    finalPrice: data.final_price
+                };
+                
+                msg.style.color = '#00e676';
+                msg.textContent = `✅ ${data.message}`;
+                
+                document.getElementById('discountRow').style.display = 'flex';
+                document.getElementById('discountPrice').textContent = `- Rp ${data.discount_amount.toLocaleString('id-ID')}`;
+                document.getElementById('totalPrice').textContent = `Rp ${data.final_price.toLocaleString('id-ID')}`;
+                
+                codeInput.disabled = false;
+                codeInput.style.background = '#e8f5e9';
+                codeInput.style.borderColor = '#00e676';
+            } else {
+                appliedVoucher = { code: null, discount: 0, finalPrice: currentTotal };
+                msg.style.color = '#c62828';
+                msg.textContent = `❌ ${data.error}`;
+                
+                document.getElementById('discountRow').style.display = 'none';
+                codeInput.style.borderColor = '#c62828';
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error:', error);
+            codeInput.style.borderColor = '';
+            msg.style.color = '#c62828';
+            msg.textContent = '❌ Terjadi kesalahan koneksi';
+        });
+    }
+    
+    window.resetVoucher = function() {
+        appliedVoucher = { code: null, discount: 0, finalPrice: 0 };
+        const codeInput = document.getElementById('voucherCode');
+        const msg = document.getElementById('voucherMessage');
+        
+        if (codeInput) {
+            codeInput.value = '';
+            codeInput.disabled = false;
+            codeInput.style.background = '';
+            codeInput.style.borderColor = '';
+        }
+        if (msg) msg.textContent = '';
+        
+        const discountRow = document.getElementById('discountRow');
+        if (discountRow) discountRow.style.display = 'none';
+        
+        if (currentRentalTotal > 0) {
+            document.getElementById('totalPrice').textContent = formatRupiah(currentRentalTotal);
+        }
+    }
+    
+    window.previewFile = function(input) {
+        const file = input.files[0];
+        const fileName = document.getElementById('fileName');
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        
+        if (file) {
+            if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+                alert('❌ Format file tidak didukung! Gunakan JPG atau PNG');
+                input.value = '';
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                alert('❌ Ukuran file terlalu besar! Maksimal 5MB');
+                input.value = '';
+                return;
+            }
+            
+            if (file.size < 10 * 1024) {
+                alert('❌ Ukuran file terlalu kecil! Minimal 10KB');
+                input.value = '';
+                return;
+            }
+            
+            fileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+            fileUploadArea.classList.add('has-file');
+        } else {
+            fileName.textContent = '';
+            fileUploadArea.classList.remove('has-file');
+        }
+    };
+    
+    // Upload ktp
+    async function uploadKTP() {
+        const ktpInput = document.getElementById('ktp');
+        
+        if (!ktpInput || !ktpInput.files || !ktpInput.files[0]) {
+            throw new Error('Foto KTP wajib diupload');
+        }
+        
+        const file = ktpInput.files[0];
+        const formData = new FormData();
+        formData.append('ktp', file);
+        
+        const response = await fetch('/api/upload-ktp', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.error || 'Gagal upload KTP');
+        }
+        
+        return result.ktp_url;
+    }
+    
+    function handleSnapClose(orderId) {
+        console.log("⚠️ User menutup popup pembayaran");
+        localStorage.removeItem('selectedMotor');
+        window.location.href = `/payment-success?order_id=${orderId}`;
+    }
+    
+    // Pembayaran
+    window.payment = async function() {
+        const form = document.getElementById('checkoutForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        if (!startDate || !endDate) {
+            alert('Silakan pilih tanggal rental!');
+            return;
+        }
+        
+        if (new Date(endDate) <= new Date(startDate)) {
+            alert('Tanggal selesai harus setelah tanggal mulai!');
+            return;
+        }
+
+        const ktpInput = document.getElementById('ktp');
+        if (!ktpInput || !ktpInput.files || !ktpInput.files[0]) {
+            alert('Foto KTP wajib diupload!');
+            return;
+        }
+
+        const btn = document.getElementById('bayar');
+        const btnText = document.getElementById('btnText');
+        btn.disabled = true;
+        
+        try {
+            btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengupload KTP...';
+            const ktpUrl = await uploadKTP();
+            
+            btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses pembayaran...';
+            
+            const payload = {
+                motorName: selectedMotor.name,
+                motorPrice: selectedMotor.price,
+                startDate: startDate,
+                endDate: endDate,
+                fullName: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                ktpUrl: ktpUrl
+            };
+            
+            if (appliedVoucher.code) {
+                payload.voucher_code = appliedVoucher.code;
+                console.log('🎟️ Voucher dikirim ke backend:', appliedVoucher.code);
+                console.log('💰 Discount:', appliedVoucher.discount);
+                console.log('💵 Final Price:', appliedVoucher.finalPrice);
+            } else {
+                console.log('💳 Pembayaran tanpa voucher');
+            }
+            
+            const response = await fetch('/api/payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                if (response.status === 409) {
+                    alert('❌ ' + result.error + '\n\nMotor ini sudah dipesan customer lain.');
+                    localStorage.removeItem('selectedMotor');
+                    window.location.href = '/motors';
+                    return;
+                }
+                
+                throw new Error(result.error || 'Gagal membuat transaksi');
+            }
+
+            const snapToken = result.token;
+            if (!snapToken) {
+                throw new Error('Token Midtrans tidak diterima');
+            }
+            
+            const orderId = result.order_id;
+            console.log('✅ Transaksi dibuat:', orderId);
+            console.log('💵 Total yang dibayar ke Midtrans:', result.total_price);
+
+            btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menunggu pembayaran...';
+
+            if (typeof window.snap === 'undefined') {
+                throw new Error('Snap.js belum dimuat. Silakan refresh halaman.');
+            }
+
+            window.snap.pay(snapToken, {
+                onSuccess: function(result) {
+                    console.log("✅ Pembayaran berhasil:", result);
+                    localStorage.removeItem('selectedMotor');
+                    window.location.href = `/payment-success?order_id=${result.order_id}`;
+                },
+                onPending: function(result) {
+                    console.log("⏳ Menunggu pembayaran:", result);
+                    localStorage.removeItem('selectedMotor');
+                    window.location.href = `/payment-success?order_id=${result.order_id}`;
+                },
+                onError: function(result) {
+                    console.log("❌ Pembayaran gagal:", result);
+                    alert("❌ Pembayaran gagal. Silakan coba lagi.");
+                    btn.disabled = false;
+                    btnText.innerHTML = 'Bayar Sekarang';
+                },
+                onClose: function() {
+                    // PERBAIKAN: Customer tetap di halaman checkout saat klik X
+                    console.log("⚠️ User menutup popup pembayaran");
+                    
+                    // Ubah teks tombol jadi loading sebentar
+                    btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membatalkan sesi...';
+                    
+                    // FITUR AUTO-CLEAN:
+                    // Panggil API Cancel secara background agar:
+                    // 1. KTP di Cloudinary dihapus (tidak nyampah)
+                    // 2. Motor kembali "Tersedia" agar bisa di-checkout ulang
+                    // 3. Kuota voucher dikembalikan
+                    fetch(`/api/cancel-transaction/${orderId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("✅ Sesi dibersihkan. KTP & Motor di-reset.");
+                        btn.disabled = false;
+                        btnText.innerHTML = 'Bayar Sekarang';
+                    })
+                    .catch(error => {
+                        console.error('❌ Gagal membersihkan sesi:', error);
+                        btn.disabled = false;
+                        btnText.innerHTML = 'Bayar Sekarang';
+                    });
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Error:', error);
+            alert('❌ ' + (error.message || 'Terjadi kesalahan'));
+            btn.disabled = false;
+            btnText.innerHTML = '<i class="fas fa-lock"></i> Bayar Sekarang';
+        }
+    };
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const ktpInput = document.getElementById('ktp');
+        
+        // File upload handlers
+        if (fileUploadArea && ktpInput) {
+            fileUploadArea.addEventListener('click', function(e) {
+                e.preventDefault();
+                ktpInput.click();
+            });
+            
+            fileUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileUploadArea.classList.add('drag-over');
+            });
+            
+            fileUploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileUploadArea.classList.remove('drag-over');
+            });
+            
+            fileUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileUploadArea.classList.remove('drag-over');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    ktpInput.files = files;
+                    window.previewFile(ktpInput);
+                }
+            });
+        }
+
+        // Voucher input handlers
+        const voucherInput = document.getElementById('voucherCode');
+        if (voucherInput) {
+            voucherInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    autoApplyVoucher();
+                }
+            });
+            
+            voucherInput.addEventListener('blur', function() {
+                if (this.value.trim() !== '') {
+                    autoApplyVoucher();
+                }
+            });
+            
+            voucherInput.addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+                
+                if (this.value.trim() === '') {
+                    window.resetVoucher();
+                }
+            });
+        }
+        
+        // Date input handlers
+        const startDate = document.getElementById('startDate');
+        const endDate = document.getElementById('endDate');
+        
+        if (startDate) startDate.addEventListener('change', calculateRental);
+        if (endDate) endDate.addEventListener('change', calculateRental);
+        
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        if (startDate) startDate.min = today;
+        if (endDate) endDate.min = today;
+        
+        // Load motor data
+        loadMotorData();
+        
+        console.log('✅ Checkout page initialized');
+    });
+})();
+</script>
+{% endblock %}

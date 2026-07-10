@@ -1,0 +1,553 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Customer Data - Admin{% endblock %}
+
+{% block content %}
+<!-- ===== PAGE HEADER ===== -->
+<div class="admin-page-header">
+    <div>
+        <h1>Data Customer</h1>
+        <p>Kelola data customer dan status akun mereka.</p>
+    </div>
+    <button class="btn btn-primary" onclick="exportCustomers()">
+        <i class="fas fa-download"></i> Export Data
+    </button>
+</div>
+
+<!-- ===== STATS CARDS ===== -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-info">
+            <p>Total Customer</p>
+            <h3>{{ total_all }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <div class="stat-info">
+            <p>Akun Aktif</p>
+            <h3>{{ total_active }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon orange">
+            <i class="fas fa-user-times"></i>
+        </div>
+        <div class="stat-info">
+            <p>Akun Non-Aktif</p>
+            <h3>{{ total_inactive }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon pink">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-info">
+            <p>Total Transaksi</p>
+            <h3>{{ total_transactions }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- ===== TABLE CONTAINER ===== -->
+<div class="admin-table-container">
+    <div class="admin-table-header">
+        <div class="admin-search-box">
+            <i class="fas fa-search" style="color: var(--text-muted);"></i>
+            <input type="text" id="searchInput" placeholder="Search by name, email, or phone..." onkeyup="searchCustomers()">
+        </div>
+        
+        <!-- DROPDOWN FILTER -->
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <label for="filterSelect" style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">
+                <i class="fas fa-filter" style="color: var(--primary); margin-right: 4px;"></i>
+                Filter:
+            </label>
+            <select id="filterSelect" 
+                    onchange="applyFilter(this.value)"
+                    style="padding: 8px 32px 8px 12px; 
+                        border: 2px solid var(--border-color); 
+                        border-radius: 8px; 
+                        font-size: 14px; 
+                        font-family: var(--font-main);
+                        font-weight: 600;
+                        color: var(--text-main);
+                        background: white;
+                        cursor: pointer;
+                        transition: var(--transition);
+                        appearance: none;
+                        -webkit-appearance: none;
+                        -moz-appearance: none;
+                        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><path fill="%23757575" d="M6 9L1 4h10z"/></svg>');
+                        background-repeat: no-repeat;
+                        background-position: right 10px center;
+                        min-width: 200px;">
+                <option value="all" {% if filter_type == 'all' %}selected{% endif %}>
+                    📋 Semua Customer ({{ total_all }})
+                </option>
+                <option value="active" {% if filter_type == 'active' %}selected{% endif %}>
+                    ✅ Active ({{ total_active }})
+                </option>
+                <option value="inactive" {% if filter_type == 'inactive' %}selected{% endif %}>
+                    👁️ Non-Active ({{ total_inactive }})
+                </option>
+            </select>
+        </div>
+    </div>
+
+    <div class="admin-table-wrapper">
+        <table class="admin-table" id="customerTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nama</th>
+                    <th>Email</th>
+                    <th>No Hp</th>
+                    <th>Registered</th>
+                    <th>Total Order</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in customers %}
+                <tr data-name="{{ customer.nama|lower }}" 
+                    data-email="{{ customer.email|lower }}"
+                    data-phone="{{ customer.no_hp }}"
+                    data-status="{{ 'active' if customer.is_active else 'inactive' }}">
+                    <td>
+                        <strong style="font-size: 13px;">#{{ customer.id_user }}</strong>
+                    </td>
+                    
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">
+                                {{ customer.nama[0].upper() }}
+                            </div>
+                            <div>
+                                <strong>{{ customer.nama }}</strong>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-size: 13px; color: var(--text-secondary);">{{ customer.email }}</span>
+                    </td>
+                    <td>
+                        <span style="font-size: 13px;">{{ customer.no_hp }}</span>
+                    </td>
+                    <td>
+                        <span style="font-size: 13px; color: var(--text-muted);">
+                            {{ customer.created_at.strftime('%d %b %Y') if customer.created_at else '-' }}
+                        </span>
+                    </td>
+                    <td>
+                        <span style="font-size: 13px; font-weight: 600; color: var(--primary);">
+                            {{ customer.total_orders or 0 }} orders
+                        </span>
+                    </td>
+                    <td>
+                        {% if customer.is_active %}
+                            <span class="admin-status success">
+                                <i class="fas fa-check-circle"></i> Active
+                            </span>
+                        {% else %}
+                            <span class="admin-status hidden">
+                                <i class="fas fa-ban"></i> Non-Active
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="admin-actions">
+                            <button class="admin-btn-icon admin-btn-view" 
+                                    onclick="viewCustomerDetail({{ customer.id_user }})"
+                                    title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            {% if customer.is_active %}
+                                <button class="admin-btn-icon admin-btn-delete" 
+                                        onclick="toggleCustomerStatus({{ customer.id_user }}, '{{ customer.nama|e }}', 'deactivate')"
+                                        title="Deactivate Account">
+                                    <i class="fas fa-user-slash"></i>
+                                </button>
+                            {% else %}
+                                <button class="admin-btn-icon admin-btn-restore" 
+                                        onclick="toggleCustomerStatus({{ customer.id_user }}, '{{ customer.nama|e }}', 'activate')"
+                                        title="Activate Account">
+                                    <i class="fas fa-user-check"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                        <i class="fas fa-users" style="font-size: 64px; display: block; margin-bottom: 16px; opacity: 0.3;"></i>
+                        <h3 style="margin-bottom: 8px;">Belum ada customer</h3>
+                        <p>Customer akan muncul setelah melakukan registrasi</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- PAGINATION -->
+    <div class="admin-pagination">
+        <span>
+            Page {{ pagination.page }} of {{ pagination.pages }} 
+            ({{ pagination.total }} customers)
+        </span>
+        <div class="admin-actions">
+            {% if pagination.has_prev %}
+                <a href="{{ url_for('admin.admin_customers', page=pagination.prev_num, filter=filter_type) }}" 
+                   class="admin-btn-icon admin-btn-view" 
+                   title="Previous Page">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            {% else %}
+                <span class="admin-btn-icon" style="background: #f5f5f5; color: #bdbdbd; cursor: not-allowed;">
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+            {% endif %}
+            
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}
+                    {% if p == pagination.page %}
+                        <span class="admin-btn-icon admin-btn-edit" style="font-weight: 700;">
+                            {{ p }}
+                        </span>
+                    {% else %}
+                        <a href="{{ url_for('admin.admin_customers', page=p, filter=filter_type) }}" 
+                           class="admin-btn-icon admin-btn-view">
+                            {{ p }}
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <span style="padding: 0 8px; color: var(--text-muted);">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+                <a href="{{ url_for('admin.admin_customers', page=pagination.next_num, filter=filter_type) }}" 
+                   class="admin-btn-icon admin-btn-view" 
+                   title="Next Page">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            {% else %}
+                <span class="admin-btn-icon" style="background: #f5f5f5; color: #bdbdbd; cursor: not-allowed;">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: CUSTOMER DETAIL ===== -->
+<div id="detailModal" class="admin-modal" onclick="closeDetailModal()">
+    <div class="admin-modal-content" style="max-width: 700px;" onclick="event.stopPropagation()">
+        <div class="admin-modal-header">
+            <h2><i class="fas fa-user"></i> Customer Details</h2>
+        </div>
+        <div id="detailContent"></div>
+        <div class="admin-modal-actions">
+            <button class="btn" style="background: var(--bg-secondary);" onclick="closeDetailModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: CONFIRMATION ===== -->
+<div id="confirmModal" class="admin-modal" onclick="closeConfirmModal()">
+    <div class="admin-modal-content" style="max-width: 480px;" onclick="event.stopPropagation()">
+        <div style="text-align: center; padding: 20px 0;">
+            <div id="confirmIcon" style="width: 80px; height: 80px; margin: 0 auto 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 36px;"></i>
+            </div>
+            <h3 id="confirmTitle" style="font-size: 22px; font-weight: 800; color: var(--text-main); margin-bottom: 12px;"></h3>
+            <p id="confirmMessage" style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 24px;"></p>
+        </div>
+        
+        <div class="admin-modal-actions" style="justify-content: center; gap: 12px;">
+            <button class="btn" 
+                    style="background: var(--bg-secondary); color: var(--text-secondary); min-width: 120px;"
+                    onclick="closeConfirmModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-primary" 
+                    id="confirmBtn"
+                    style="min-width: 120px;">
+                <i class="fas fa-check"></i> Confirm
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function decodeHtmlEntities(text) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+}
+
+function showNotification(message, type = 'info') {
+    const colors = {
+        success: { bg: '#e8f5e9', color: '#2e7d32' },
+        error: { bg: '#ffebee', color: '#c62828' },
+        info: { bg: '#e3f2fd', color: '#1565c0' },
+        warning: { bg: '#fff3e0', color: '#ef6c00' }
+    };
+    
+    const config = colors[type] || colors.info;
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        padding: 16px 24px;
+        background: ${config.bg};
+        color: ${config.color};
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 9999;
+        animation: slideInRight 0.3s ease;
+        font-weight: 600;
+        max-width: 400px;
+    `;
+    notification.innerHTML = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+function togglePasswordVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// Filter
+function applyFilter(filterType) {
+    window.location.href = `{{ url_for('admin.admin_customers') }}?filter=${filterType}&page=1`;
+}
+
+function searchCustomers() {
+    const input = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#customerTable tbody tr');
+    
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const email = row.getAttribute('data-email') || '';
+        const phone = row.getAttribute('data-phone') || '';
+        
+        row.style.display = (name.includes(input) || email.includes(input) || phone.includes(input)) ? '' : 'none';
+    });
+}
+
+// View detail customer
+function viewCustomerDetail(customerId) {
+    fetch(`/admin/customers/detail/${customerId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const customer = data.customer;
+                const html = `
+                    <div style="display: grid; gap: 16px;">
+                        <div style="display: flex; align-items: center; gap: 16px; padding: 20px; background: var(--bg-secondary); border-radius: 12px;">
+                            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 700;">
+                                ${customer.nama[0].toUpperCase()}
+                            </div>
+                            <div>
+                                <h3 style="font-size: 24px; font-weight: 800; color: var(--text-main); margin-bottom: 4px;">${customer.nama}</h3>
+                                <span class="admin-status ${customer.is_active ? 'success' : 'hidden'}">
+                                    <i class="fas fa-${customer.is_active ? 'check-circle' : 'ban'}"></i> ${customer.is_active ? 'Active' : 'Non-Active'}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Email</div>
+                                <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">${customer.email}</div>
+                            </div>
+                            <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Phone</div>
+                                <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">${customer.no_hp}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Registered</div>
+                                <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">${customer.created_at || '-'}</div>
+                            </div>
+                            <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Total Orders</div>
+                                <div style="font-size: 14px; font-weight: 600; color: var(--primary);">${customer.total_orders || 0} orders</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('detailContent').innerHTML = html;
+                document.getElementById('detailModal').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } else {
+                showNotification('❌ Failed to load customer detail', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('❌ Connection error', 'error');
+        });
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// Toggle status customer
+function toggleCustomerStatus(customerId, customerName, action) {
+    const isDeactivate = action === 'deactivate';
+    
+    document.getElementById('confirmIcon').innerHTML = isDeactivate 
+        ? '<i class="fas fa-user-slash" style="font-size: 36px; color: #ff5722;"></i>'
+        : '<i class="fas fa-user-check" style="font-size: 36px; color: #00e676;"></i>';
+    
+    document.getElementById('confirmIcon').style.background = isDeactivate 
+        ? 'rgba(255, 87, 34, 0.1)' 
+        : 'rgba(0, 230, 118, 0.1)';
+    
+    document.getElementById('confirmTitle').textContent = isDeactivate ? 'Non-Active Account?' : 'Activate Account?';
+    
+    document.getElementById('confirmMessage').innerHTML = isDeactivate
+        ? `Are you sure you want to <strong>deactivate</strong> the account of <strong>${customerName}</strong>?<br><br>This customer will <strong>NOT be able to login</strong> until the account is reactivated.`
+        : `Are you sure you want to <strong>activate</strong> the account of <strong>${customerName}</strong>?<br><br>This customer will be able to login again.`;
+    
+    document.getElementById('confirmBtn').innerHTML = isDeactivate 
+        ? '<i class="fas fa-user-slash"></i> Deactivate' 
+        : '<i class="fas fa-user-check"></i> Activate';
+    
+    document.getElementById('confirmBtn').onclick = () => confirmToggleStatus(customerId, !isDeactivate);
+    
+    document.getElementById('confirmModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function confirmToggleStatus(customerId, isActive) {
+    fetch(`/admin/customers/toggle-status/${customerId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: isActive })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`✅ Account ${isActive ? 'activated' : 'deactivated'} successfully!`, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification('❌ Failed: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('❌ Connection error', 'error');
+    });
+    
+    closeConfirmModal();
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordInput = document.getElementById('editPassword');
+    const strengthDiv = document.getElementById('passwordStrength');
+    
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            const value = this.value;
+            
+            if (value.length === 0) {
+                strengthDiv.style.display = 'none';
+                return;
+            }
+            
+            strengthDiv.style.display = 'block';
+            
+            let strength = 0;
+            if (value.length >= 6) strength++;
+            if (value.length >= 10) strength++;
+            if (/[A-Z]/.test(value)) strength++;
+            if (/[0-9]/.test(value)) strength++;
+            if (/[^A-Za-z0-9]/.test(value)) strength++;
+            
+            let strengthText, strengthColor;
+            
+            if (strength <= 2) {
+                strengthText = '⚠️ Lemah';
+                strengthColor = '#c62828';
+            } else if (strength <= 3) {
+                strengthText = '⚡ Sedang';
+                strengthColor = '#ef6c00';
+            } else {
+                strengthText = '✅ Kuat';
+                strengthColor = '#2e7d32';
+            }
+            
+            strengthDiv.innerHTML = `<span style="font-size: 12px; color: ${strengthColor}; font-weight: 600;">Password strength: ${strengthText}</span>`;
+        });
+    }
+});
+
+// Export Customer
+function exportCustomers() {
+    showNotification('📥 Exporting data...', 'info');
+    window.location.href = '/admin/customers/export';
+}
+
+// Keyboard shortcut
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeDetailModal();
+        closeConfirmModal();
+        closeEditModal();
+    }
+});
+
+// Animasi
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

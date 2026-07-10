@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin - GoRent{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-bolt"></i> GoRent</h2>
+                <small>Admin Console</small>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <a href="{{ url_for('admin.admin_dashboard')}}" class="menu-item {% if request.endpoint == 'admin.admin_dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('admin.admin_motors') }}" class="menu-item {% if request.endpoint == 'admin.admin_motors' %}active{% endif %}">
+                    <i class="fas fa-motorcycle"></i>
+                    <span>Data Motor</span>
+                </a>
+                <a href="{{ url_for('admin.admin_transaksi') }}" class="menu-item {% if request.endpoint == 'admin.admin_transaksi' %}active{% endif %}">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Data Transaksi</span>
+                </a>
+                <a href="{{ url_for('admin.admin_customers')}}" class="menu-item {% if request.endpoint == 'admin.admin_customers' %}active{% endif %}">
+                    <i class="fas fa-users"></i>
+                    <span>Data Customer</span>
+                </a>
+                <a href="{{ url_for('admin.admin_vouchers')}}" class="menu-item {% if request.endpoint == 'admin.admin_vouchers' %}active{% endif %}">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Data Voucher</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('customer.index') }}" class="menu-item">
+                    <i class="fas fa-globe"></i>
+                    <span>View Website</span>
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Mobile Toggle -->
+            <button class="admin-mobile-toggle" onclick="toggleAdminSidebar()" style="margin-bottom: 20px;">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-alert flash-{{ category }}" style="margin-top: 0;">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        function toggleAdminSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('active');
+        }
+
+        // Auto-hide flash alerts
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashAlerts = document.querySelectorAll('.flash-alert');
+            flashAlerts.forEach(function(alert) {
+                setTimeout(function() {
+                    alert.style.transition = 'opacity 0.5s ease';
+                    alert.style.opacity = '0';
+                    setTimeout(function() {
+                        alert.remove();
+                    }, 500);
+                }, 5000);
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,744 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Voucher Management - Admin{% endblock %}
+
+{% block content %}
+<!-- ===== PAGE HEADER ===== -->
+<div class="admin-page-header">
+    <div>
+        <h1>Kelola Voucher</h1>
+        <p>Kelola voucher diskon untuk promo dan marketing.</p>
+    </div>
+    <button class="btn btn-primary" onclick="openAddModal()">
+        <i class="fas fa-plus"></i> Tambah Voucher
+    </button>
+</div>
+
+<!-- ===== STATS CARDS ===== -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">
+            <i class="fas fa-ticket-alt"></i>
+        </div>
+        <div class="stat-info">
+            <p>Total Voucher</p>
+            <h3>{{ total_vouchers }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-info">
+            <p>Voucher Aktif</p>
+            <h3>{{ total_aktif }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon orange">
+            <i class="fas fa-ban"></i>
+        </div>
+        <div class="stat-info">
+            <p>Non-Aktif</p>
+            <h3>{{ total_nonaktif }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #ffebee; color: #c62828;">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="stat-info">
+            <p>Expired</p>
+            <h3>{{ total_expired }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon pink">
+            <i class="fas fa-shopping-cart"></i>
+        </div>
+        <div class="stat-info">
+            <p>Total Digunakan</p>
+            <h3>{{ total_used }}x</h3>
+        </div>
+    </div>
+</div>
+
+<!-- ===== TABLE CONTAINER ===== -->
+<div class="admin-table-container">
+    <div class="admin-table-header">
+        <div class="admin-search-box">
+            <i class="fas fa-search" style="color: var(--text-muted);"></i>
+            <input type="text" id="searchInput" 
+                   placeholder="Cari kode voucher..." 
+                   value="{{ search_query }}"
+                   onkeyup="handleSearch(event)">
+        </div>
+        
+        <!-- DROPDOWN FILTER -->
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <label for="filterSelect" style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">
+                <i class="fas fa-filter" style="color: var(--primary); margin-right: 4px;"></i>
+                Filter:
+            </label>
+            <select id="filterSelect" 
+                    onchange="applyFilter(this.value)"
+                    style="padding: 8px 32px 8px 12px; 
+                        border: 2px solid var(--border-color); 
+                        border-radius: 8px; 
+                        font-size: 14px; 
+                        font-family: var(--font-main);
+                        font-weight: 600;
+                        color: var(--text-main);
+                        background: white;
+                        cursor: pointer;
+                        transition: var(--transition);
+                        appearance: none;
+                        -webkit-appearance: none;
+                        -moz-appearance: none;
+                        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><path fill="%23757575" d="M6 9L1 4h10z"/></svg>');
+                        background-repeat: no-repeat;
+                        background-position: right 10px center;
+                        min-width: 220px;">
+                <option value="all" {% if filter_type == 'all' %}selected{% endif %}>
+                    📋 Semua Voucher ({{ total_vouchers }})
+                </option>
+                <option value="active" {% if filter_type == 'active' %}selected{% endif %}>
+                    ✅ Aktif ({{ total_aktif }})
+                </option>
+                <option value="inactive" {% if filter_type == 'inactive' %}selected{% endif %}>
+                    ❌ Non-Aktif ({{ total_nonaktif }})
+                </option>
+                <option value="expired" {% if filter_type == 'expired' %}selected{% endif %}>
+                    ⏰ Expired ({{ total_expired }})
+                </option>
+                <option value="not_started" {% if filter_type == 'not_started' %}selected{% endif %}>
+                    ⏳ Belum Aktif ({{ total_belumAktif }})
+                </option>
+                <option value="quota_full" {% if filter_type == 'quota_full' %}selected{% endif %}>
+                    🚫 Kuota Habis ({{ total_habis }})
+                </option>
+            </select>
+        </div>
+    </div>
+
+    <div class="admin-table-wrapper">
+        <table class="admin-table" id="voucherTable">
+            <thead>
+                <tr>
+                    <th>Kode Voucher</th>
+                    <th>Tipe</th>
+                    <th>Nilai</th>
+                    <th>Min. Belanja</th>
+                    <th>Max Diskon</th>
+                    <th>Periode</th>
+                    <th>Kuota</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vouchers %}
+                {% set now = now() if now is defined else '' %}
+                <tr>
+                    <td>
+                        <strong style="font-family: 'Courier New', monospace; color: var(--primary); font-size: 14px;">
+                            {{ v.kode_voucher }}
+                        </strong>
+                    </td>
+                    <td>
+                        {% if v.tipe_diskon == 'percent' %}
+                            <span class="admin-status" style="background: #e3f2fd; color: #1976d2;">
+                                <i class="fas fa-percent"></i> Persen
+                            </span>
+                        {% else %}
+                            <span class="admin-status" style="background: #fff3e0; color: #ef6c00;">
+                                <i class="fas fa-money-bill"></i> Fixed
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="color: var(--primary);">
+                            {% if v.tipe_diskon == 'percent' %}
+                                {{ v.nilai_diskon }}%
+                            {% else %}
+                                Rp {{ "{:,.0f}".format(v.nilai_diskon) }}
+                            {% endif %}
+                        </strong>
+                    </td>
+                    <td>
+                        {% if v.min_belanja > 0 %}
+                            Rp {{ "{:,.0f}".format(v.min_belanja) }}
+                        {% else %}
+                            <span style="color: var(--text-muted);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if v.max_diskon %}
+                            Rp {{ "{:,.0f}".format(v.max_diskon) }}
+                        {% else %}
+                            <span style="color: var(--text-muted);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="font-size: 12px;">
+                            <div style="color: var(--text-secondary);">
+                                <i class="fas fa-calendar-check" style="color: #00e676;"></i>
+                                {{ v.tgl_mulai.strftime('%d %b %Y') }}
+                            </div>
+                            <div style="color: var(--text-muted); margin-top: 2px;">
+                                <i class="fas fa-calendar-times" style="color: #c62828;"></i>
+                                {{ v.tgl_selesai.strftime('%d %b %Y') }}
+                            </div>
+                            {% if v.tgl_selesai < waktu_skrng %}
+                                <div style="margin-top: 4px; font-size: 10px; color: #c62828; font-weight: 600;">
+                                    <i class="fas fa-exclamation-triangle"></i> 
+                                    Kedaluwarsa {{ (waktu_skrng - v.tgl_selesai).days }} hari lalu
+                                </div>
+                            {% elif v.tgl_mulai > waktu_skrng %}
+                                <div style="margin-top: 4px; font-size: 10px; color: #ef6c00; font-weight: 600;">
+                                    <i class="fas fa-hourglass-start"></i> 
+                                    Aktif dalam {{ (v.tgl_mulai - waktu_skrng).days }} hari
+                                </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="text-align: center;">
+                            <strong style="color: var(--primary);">{{ v.total_pakai }}</strong>
+                            <span style="color: var(--text-muted);">/ {{ v.kuota }}</span>
+                            <div style="width: 80px; height: 6px; background: var(--border-color); border-radius: 3px; margin-top: 4px; overflow: hidden;">
+                                <div style="width: {{ (v.total_pakai / v.kuota * 100) if v.kuota > 0 else 0 }}%; height: 100%; background: {% if v.total_pakai / v.kuota > 0.8 %}#c62828{% elif v.total_pakai / v.kuota > 0.5 %}#ef6c00{% else %}#00e676{% endif %};"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if not v.is_active %}
+                            <span class="admin-status hidden">
+                                <i class="fas fa-ban"></i> Non-Aktif
+                            </span>
+                        {% elif v.tgl_selesai < waktu_skrng %}
+                            <span class="admin-status" style="background: #ffebee; color: #c62828;">
+                                <i class="fas fa-clock"></i> Expired
+                            </span>
+                        {% elif v.tgl_mulai > waktu_skrng %}
+                            <span class="admin-status" style="background: #fff3e0; color: #ef6c00;">
+                                <i class="fas fa-hourglass-start"></i> Belum Aktif
+                            </span>
+                        {% elif v.total_pakai >= v.kuota %}
+                            <span class="admin-status failed">
+                                <i class="fas fa-times-circle"></i> Kuota Habis
+                            </span>
+                        {% else %}
+                            <span class="admin-status success">
+                                <i class="fas fa-check-circle"></i> Aktif
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="admin-actions">
+                            <button class="admin-btn-icon admin-btn-view" 
+                                    onclick="viewVoucherDetail({{ v.id }})"
+                                    title="Lihat Detail">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="admin-btn-icon admin-btn-edit" 
+                                    onclick='openEditModal({
+                                        "id": {{ v.id }},
+                                        "kode_voucher": "{{ v.kode_voucher|e }}",
+                                        "tipe_diskon": "{{ v.tipe_diskon }}",
+                                        "nilai_diskon": {{ v.nilai_diskon }},
+                                        "min_belanja": {{ v.min_belanja }},
+                                        "max_diskon": {{ v.max_diskon or 0 }},
+                                        "tgl_mulai": "{{ v.tgl_mulai.strftime("%Y-%m-%dT%H:%M") }}",
+                                        "tgl_selesai": "{{ v.tgl_selesai.strftime("%Y-%m-%dT%H:%M") }}",
+                                        "kuota": {{ v.kuota }}
+                                    })'
+                                    title="Edit Voucher">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button class="admin-btn-icon" 
+                                    style="background: #e0f2f1; color: #00897b;" 
+                                    onclick="resetVoucherQuota({{ v.id }}, '{{ v.kode_voucher|e }}')"
+                                    title="Reset Kuota (Nol-kan Penggunaan)">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            {% if v.is_active %}
+                                <button class="admin-btn-icon admin-btn-delete" 
+                                        onclick="toggleVoucher({{ v.id }}, '{{ v.kode_voucher|e }}', 'deactivate')"
+                                        title="Non-aktifkan">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                            {% else %}
+                                <button class="admin-btn-icon admin-btn-restore" 
+                                        onclick="toggleVoucher({{ v.id }}, '{{ v.kode_voucher|e }}', 'activate')"
+                                        title="Aktifkan">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            {% endif %}
+                            <button class="admin-btn-icon" 
+                                    style="background: #ffebee; color: #c62828;"
+                                    onclick="deleteVoucher({{ v.id }}, '{{ v.kode_voucher|e }}', {{ v.total_pakai }})"
+                                    title="Hapus Permanen">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                        <i class="fas fa-ticket-alt" style="font-size: 64px; display: block; margin-bottom: 16px; opacity: 0.3;"></i>
+                        <h3 style="margin-bottom: 8px;">Belum ada voucher</h3>
+                        <p>Klik tombol "Tambah Voucher" untuk membuat voucher pertama</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGINATION -->
+    <div class="admin-pagination">
+        <span>
+            Page {{ pagination.page }} of {{ pagination.pages }} 
+            ({{ pagination.total }} vouchers)
+        </span>
+        <div class="admin-actions">
+            {% if pagination.has_prev %}
+                <a href="{{ url_for('admin.admin_vouchers', page=pagination.prev_num, filter=filter_type, search=search_query) }}" 
+                   class="admin-btn-icon admin-btn-view" 
+                   title="Previous Page">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            {% else %}
+                <span class="admin-btn-icon" style="background: #f5f5f5; color: #bdbdbd; cursor: not-allowed;">
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+            {% endif %}
+            
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}
+                    {% if p == pagination.page %}
+                        <span class="admin-btn-icon admin-btn-edit" style="font-weight: 700;">
+                            {{ p }}
+                        </span>
+                    {% else %}
+                        <a href="{{ url_for('admin.admin_vouchers', page=p, filter=filter_type, search=search_query) }}" 
+                           class="admin-btn-icon admin-btn-view">
+                            {{ p }}
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <span style="padding: 0 8px; color: var(--text-muted);">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+                <a href="{{ url_for('admin.admin_vouchers', page=pagination.next_num, filter=filter_type, search=search_query) }}" 
+                   class="admin-btn-icon admin-btn-view" 
+                   title="Next Page">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            {% else %}
+                <span class="admin-btn-icon" style="background: #f5f5f5; color: #bdbdbd; cursor: not-allowed;">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: DETAIL VOUCHER ===== -->
+<div id="detailModal" class="admin-modal" onclick="closeDetailModal()">
+    <div class="admin-modal-content" style="max-width: 700px;" onclick="event.stopPropagation()">
+        <div class="admin-modal-header">
+            <h2><i class="fas fa-ticket-alt" style="color: var(--primary);"></i> Detail Voucher</h2>
+        </div>
+        <div id="detailContent">
+            <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: var(--primary);"></i>
+            </div>
+        </div>
+        <div class="admin-modal-actions">
+            <button class="btn" style="background: var(--bg-secondary);" onclick="closeDetailModal()">
+                <i class="fas fa-times"></i> Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: ADD/EDIT VOUCHER ===== -->
+<div id="voucherModal" class="admin-modal">
+    <div class="admin-modal-content" style="max-width: 600px;">
+        <div class="admin-modal-header">
+            <h2 id="modalTitle"><i class="fas fa-plus-circle" style="color: var(--primary);"></i> Tambah Voucher Baru</h2>
+        </div>
+        <form id="voucherForm" method="POST">
+            <input type="hidden" id="voucherId">
+            
+            <div class="admin-form-group">
+                <label>
+                    <i class="fas fa-tag" style="color: var(--primary);"></i>
+                    Kode Voucher <span style="color: #d32f2f;">*</span>
+                </label>
+                <input type="text" id="kode_voucher" name="kode_voucher" required 
+                       placeholder="Contoh: GORENT50" 
+                       style="text-transform: uppercase; font-family: 'Courier New', monospace; font-weight: 700;">
+            </div>
+
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label>
+                        <i class="fas fa-percent" style="color: var(--primary);"></i>
+                        Tipe Diskon <span style="color: #d32f2f;">*</span>
+                    </label>
+                    <select id="tipe_diskon" name="tipe_diskon" required onchange="updateMaxDiskonVisibility()">
+                        <option value="percent">Persentase (%)</option>
+                        <option value="fixed">Nominal Tetap (Rp)</option>
+                    </select>
+                </div>
+                <div class="admin-form-group">
+                    <label>
+                        <i class="fas fa-calculator" style="color: var(--primary);"></i>
+                        Nilai Diskon <span style="color: #d32f2f;">*</span>
+                    </label>
+                    <input type="number" id="nilai_diskon" name="nilai_diskon" required min="1" placeholder="50">
+                    <small id="nilaiHint" style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+                        Dalam persen (contoh: 50 untuk 50%)
+                    </small>
+                </div>
+            </div>
+
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label>
+                        <i class="fas fa-shopping-cart" style="color: var(--primary);"></i>
+                        Min. Belanja (Rp)
+                    </label>
+                    <input type="number" id="min_belanja" name="min_belanja" value="0" min="0" placeholder="0">
+                    <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+                        Kosongkan/0 jika tidak ada minimal
+                    </small>
+                </div>
+                <div class="admin-form-group" id="maxDiskonGroup">
+                    <label>
+                        <i class="fas fa-shield-alt" style="color: var(--primary);"></i>
+                        Max. Diskon (Rp)
+                    </label>
+                    <input type="number" id="max_diskon" name="max_diskon" min="0" placeholder="50000">
+                    <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+                        Hanya untuk tipe Persen
+                    </small>
+                </div>
+            </div>
+
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label>
+                        <i class="fas fa-calendar-check" style="color: var(--primary);"></i>
+                        Tanggal Mulai <span style="color: #d32f2f;">*</span>
+                    </label>
+                    <input type="datetime-local" id="tgl_mulai" name="tgl_mulai" required>
+                </div>
+                <div class="admin-form-group">
+                    <label>
+                        <i class="fas fa-calendar-times" style="color: var(--primary);"></i>
+                        Tanggal Selesai <span style="color: #d32f2f;">*</span>
+                    </label>
+                    <input type="datetime-local" id="tgl_selesai" name="tgl_selesai" required>
+                </div>
+            </div>
+
+            <div class="admin-form-group">
+                <label>
+                    <i class="fas fa-boxes" style="color: var(--primary);"></i>
+                    Kuota Penggunaan <span style="color: #d32f2f;">*</span>
+                </label>
+                <input type="number" id="kuota" name="kuota" required min="1" value="100" placeholder="100">
+                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+                    Berapa kali voucher ini bisa digunakan
+                </small>
+            </div>
+
+            <div class="admin-modal-actions">
+                <button type="button" class="btn" style="background: var(--bg-secondary);" onclick="closeModal()">
+                    <i class="fas fa-times"></i> Batal
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="fas fa-save"></i> Simpan Voucher
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function formatRupiah(amount) {
+    return 'Rp ' + parseInt(amount).toLocaleString('id-ID');
+}
+
+// Filter
+function applyFilter(filterType) {
+    const search = document.getElementById('searchInput').value;
+    window.location.href = `{{ url_for('admin.admin_vouchers') }}?filter=${filterType}&search=${encodeURIComponent(search)}&page=1`;
+}
+
+function handleSearch(event) {
+    if (event.key === 'Enter') {
+        const search = event.target.value;
+        const filter = document.getElementById('filterSelect').value;
+        window.location.href = `{{ url_for('admin.admin_vouchers') }}?filter=${filter}&search=${encodeURIComponent(search)}&page=1`;
+    }
+}
+
+// Modal functions
+function openAddModal() {
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle" style="color: var(--primary);"></i> Tambah Voucher Baru';
+    document.getElementById('voucherForm').action = "{{ url_for('admin.admin_voucher_add') }}";
+    document.getElementById('voucherForm').reset();
+    document.getElementById('voucherId').value = '';
+    document.getElementById('min_belanja').value = '0';
+    document.getElementById('kuota').value = '100';
+    document.getElementById('tipe_diskon').value = 'percent';
+    updateMaxDiskonVisibility();
+    
+    // Set default tanggal
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const nextMonth = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    
+    document.getElementById('tgl_mulai').value = now.toISOString().slice(0, 16);
+    document.getElementById('tgl_selesai').value = nextMonth.toISOString().slice(0, 16);
+    
+    document.getElementById('voucherModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function openEditModal(voucher) {
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit" style="color: var(--primary);"></i> Edit Voucher';
+    document.getElementById('voucherForm').action = `/admin/voucher/edit/${voucher.id}`;
+    
+    document.getElementById('voucherId').value = voucher.id;
+    document.getElementById('kode_voucher').value = voucher.kode_voucher;
+    document.getElementById('tipe_diskon').value = voucher.tipe_diskon;
+    document.getElementById('nilai_diskon').value = voucher.nilai_diskon;
+    document.getElementById('min_belanja').value = voucher.min_belanja;
+    document.getElementById('max_diskon').value = voucher.max_diskon || '';
+    document.getElementById('tgl_mulai').value = voucher.tgl_mulai;
+    document.getElementById('tgl_selesai').value = voucher.tgl_selesai;
+    document.getElementById('kuota').value = voucher.kuota;
+    
+    updateMaxDiskonVisibility();
+    
+    document.getElementById('voucherModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    document.getElementById('voucherModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function updateMaxDiskonVisibility() {
+    const tipe = document.getElementById('tipe_diskon').value;
+    const maxGroup = document.getElementById('maxDiskonGroup');
+    const nilaiHint = document.getElementById('nilaiHint');
+    
+    if (tipe === 'percent') {
+        maxGroup.style.display = 'block';
+        nilaiHint.textContent = 'Dalam persen (contoh: 50 untuk 50%)';
+    } else {
+        maxGroup.style.display = 'none';
+        nilaiHint.textContent = 'Dalam Rupiah (contoh: 20000 untuk Rp 20.000)';
+    }
+}
+
+// View detail voucher
+function viewVoucherDetail(id) {
+    document.getElementById('detailModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    // Loading state
+    document.getElementById('detailContent').innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: var(--primary);"></i>
+        </div>
+    `;
+    
+    fetch(`/admin/voucher/detail/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const v = data.voucher;
+                const html = `
+                    <div style="display: grid; gap: 16px;">
+                        <!-- Header dengan kode voucher -->
+                        <div style="display: flex; align-items: center; gap: 16px; padding: 20px; background: var(--bg-secondary); border-radius: 12px;">
+                            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px;">
+                                <i class="fas fa-ticket-alt"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <h3 style="font-size: 28px; font-weight: 800; color: var(--primary); margin-bottom: 4px; font-family: 'Courier New', monospace;">
+                                    ${v.kode}
+                                </h3>
+                                <span style="padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; background: ${v.status_color}20; color: ${v.status_color};">
+                                    ${v.status_text}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Info Diskon -->
+                        <div style="padding: 20px; background: linear-gradient(135deg, rgba(255, 87, 34, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%); border-radius: 12px; border: 2px solid var(--primary);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Nilai Diskon</div>
+                                <div style="font-size: 36px; font-weight: 800; color: var(--primary);">
+                                    ${v.tipe === 'percent' ? v.nilai + '%' : formatRupiah(v.nilai)}
+                                </div>
+                                ${v.max_diskon ? `<div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Maksimal diskon: ${formatRupiah(v.max_diskon)}</div>` : ''}
+                            </div>
+                        </div>
+                        
+                        <!-- Detail Grid -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+                                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Tipe Diskon</div>
+                                <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">
+                                    ${v.tipe === 'percent' ? '📊 Persentase' : '💵 Nominal Tetap'}
+                                </div>
+                            </div>
+                            <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+                                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Min. Belanja</div>
+                                <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">
+                                    ${v.min_belanja > 0 ? formatRupiah(v.min_belanja) : 'Tidak ada'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Periode -->
+                        <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+                            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Periode Berlaku</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-size: 12px; color: var(--text-muted);">Mulai</div>
+                                    <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">${v.tgl_mulai}</div>
+                                </div>
+                                <i class="fas fa-arrow-right" style="color: var(--primary);"></i>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 12px; color: var(--text-muted);">Selesai</div>
+                                    <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">${v.tgl_selesai}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Kuota -->
+                        <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
+                            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Penggunaan Kuota</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div>
+                                    <span style="font-size: 24px; font-weight: 800; color: var(--primary);">${v.total_pakai}</span>
+                                    <span style="font-size: 14px; color: var(--text-muted);"> / ${v.kuota}</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 12px; color: var(--text-muted);">Sisa</div>
+                                    <div style="font-size: 16px; font-weight: 700; color: ${v.sisa_kuota > 0 ? '#00e676' : '#c62828'};">${v.sisa_kuota}</div>
+                                </div>
+                            </div>
+                            <div style="width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden;">
+                                <div style="width: ${v.persentase_pakai}%; height: 100%; background: ${v.persentase_pakai > 80 ? '#c62828' : v.persentase_pakai > 50 ? '#ef6c00' : '#00e676'}; transition: width 0.5s;"></div>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; text-align: center;">
+                                ${v.persentase_pakai}% terpakai
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('detailContent').innerHTML = html;
+            } else {
+                document.getElementById('detailContent').innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #c62828;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 12px;"></i>
+                        <p>${data.error}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('detailContent').innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #c62828;">
+                    <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 12px;"></i>
+                    <p>Terjadi kesalahan koneksi</p>
+                </div>
+            `;
+        });
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// Toggle status
+function toggleVoucher(id, kode, action) {
+    const isDeactivate = action === 'deactivate';
+    const message = isDeactivate
+        ? `Non-aktifkan voucher "${kode}"?\n\nCustomer tidak akan bisa menggunakan voucher ini lagi.`
+        : `Aktifkan voucher "${kode}"?\n\nCustomer bisa menggunakan voucher ini kembali.`;
+    
+    if (!confirm(message)) return;
+    
+    // Submit form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/admin/voucher/toggle/${id}`;
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// Delete voucher
+function deleteVoucher(id, kode, totalPakai) {
+    if (totalPakai > 0) {
+        alert(`❌ Voucher "${kode}" sudah digunakan ${totalPakai} kali dan tidak bisa dihapus!\n\nGunakan fitur Non-Aktifkan saja.`);
+        return;
+    }
+    
+    if (!confirm(`⚠️ HAPUS PERMANEN voucher "${kode}"?\n\nTindakan ini TIDAK BISA dibatalkan!`)) return;
+    if (!confirm(`Ini kesempatan terakhir. Yakin hapus "${kode}"?`)) return;
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/admin/voucher/delete/${id}`;
+    document.body.appendChild(form);
+    form.submit();
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeDetailModal();
+        closeModal();
+    }
+});
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    if (event.target.id === 'detailModal') closeDetailModal();
+    if (event.target.id === 'voucherModal') closeModal();
+}
+
+// Reset voucher quota
+function resetVoucherQuota(id, kode) {
+    const message = `🔄 Reset kuota penggunaan voucher "${kode}"?\n\nTotal penggunaan (terpakai) akan kembali menjadi 0 dan voucher bisa digunakan kembali dari awal.`;
+    
+    if (!confirm(message)) return;
+    
+    // Submit form secara dinamis
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/admin/voucher/reset/${id}`;
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+{% endblock %}

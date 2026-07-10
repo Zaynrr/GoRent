@@ -1,0 +1,452 @@
+{% extends 'customers/base.html' %}
+
+{% block title %}Armada Motor - GoRent{% endblock %}
+
+{% block content %}
+    <section class="page-header">
+        <div class="container">
+            <h1>Armada Kami</h1>
+            <p>Pilih motor yang sesuai dengan kebutuhan Anda</p>
+        </div>
+    </section>
+
+    <section class="motors-container">
+        <div class="container">
+            <div class="motors-layout">
+
+                <aside class="filter-sidebar">
+                    <div class="filter-header">
+                        <h3><i class="fas fa-filter"></i> Filters</h3>
+                        <button class="clear-filters" onclick="clearAllFilters()">Clear All</button>
+                    </div>
+
+                    <div class="filter-section">
+                        <h4>Kategori</h4>
+                        <div class="filter-options">
+                            {% for kategori in kategori %}
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="kategori" value="{{ kategori.nama_kategori|lower }}" class="filter-checkbox">
+                                <span class="checkmark"></span>
+                                <span>{{ kategori.nama_kategori }}</span>
+                            </label>
+                            {% else %}
+                            <p style="color: var(--text-muted); font-size: 13px;">Belum ada kategori</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="filter-section">
+                        <h4>Transmisi</h4>
+                        <div class="filter-options">
+                            <label class="radio-label">
+                                <input type="radio" name="transmission" value="all" class="filter-radio" checked>
+                                <span class="radio-mark"></span>
+                                <span>Semua</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="transmission" value="Matic" class="filter-radio">
+                                <span class="radio-mark"></span>
+                                <span>Matic</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="transmission" value="Manual" class="filter-radio">
+                                <span class="radio-mark"></span>
+                                <span>Manual</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="filter-section">
+                        <h4>Harga Per Hari</h4>
+                        <div class="price-options">
+                            <button class="price-btn active" data-min="0" data-max="999999999">Semua</button>
+                            <button class="price-btn" data-min="0" data-max="150000">≤ Rp 150K</button>
+                            <button class="price-btn" data-min="150000" data-max="250000">Rp 150K – 250K</button>
+                            <button class="price-btn" data-min="250000" data-max="999999999">≥ Rp 250K</button>
+                        </div>
+                    </div>
+                </aside>
+
+                <div class="motors-content">
+                    <div class="motors-header">
+                        <p class="results-count">Menampilkan <span id="motorCount">{{ motors|length }}</span> motor</p>
+                        <button class="mobile-filter-toggle" onclick="toggleMobileFilter()">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                    </div>
+
+                    <div class="motor-grid" id="motorGrid">
+                        {% for motor in motors %}
+                        <div class="motor-card {% if motor.status_motor == 'Disewa' %}motor-rented{% elif motor.status_motor == 'Maintenance' %}motor-maintenance{% endif %}" 
+                             data-model="{{ motor.nama_motor|lower }}" 
+                             data-transmission="{{ motor.transmisi }}" 
+                             data-price="{{ motor.harga_sewa }}" 
+                             data-category="{{ motor.kategori.nama_kategori|lower if motor.kategori else '' }}"
+                             data-status="{{ motor.status_motor }}">
+                            
+                            <div class="motor-img">
+                                {% if motor.foto_motor %}
+                                    <img src="{{ motor.foto_motor }}" alt="{{ motor.nama_motor }}">
+                                {% else %}
+                                    <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&h=400&fit=crop" alt="Default Motor">
+                                {% endif %}
+                                
+                                {% if motor.status_motor == 'Disewa' %}
+                                    <span class="badge badge-rented">
+                                        <i class="fas fa-user-clock"></i> Disewa
+                                    </span>
+                                {% elif motor.status_motor == 'Maintenance' %}
+                                    <span class="badge badge-maintenance">
+                                        <i class="fas fa-wrench"></i> Maintenance
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-available">
+                                        <i class="fas fa-check-circle"></i> Tersedia
+                                    </span>
+                                {% endif %}
+                                
+                                <button class="fav-btn"><i class="far fa-heart"></i></button>
+                            </div>
+                            
+                            <div class="motor-details">
+                                <h3>{{ motor.nama_motor }}</h3>
+                                
+                                <div class="motor-specs">
+                                    <span><i class="fas fa-cogs"></i> {{ motor.cc_motor }}cc</span>
+                                    <span><i class="fas fa-cog"></i> {{ motor.transmisi }}</span>
+                                </div>
+                                
+                                <div class="motor-bottom">
+                                    <div class="price">
+                                        <span class="price-val">
+                                            Rp {{ "{:,.0f}".format(motor.harga_sewa) }}<span>/hari</span>
+                                        </span>
+                                    </div>
+                                    
+                                    {% if motor.status_motor == 'Disewa' %}
+                                        <button class="btn btn-disabled btn-sm" 
+                                                onclick="showMotorRentedPopup('{{ motor.nama_motor|e }}')">
+                                            <i class="fas fa-lock"></i> Disewa
+                                        </button>
+                                    {% elif motor.status_motor == 'Maintenance' %}
+                                        <button class="btn btn-disabled btn-sm" 
+                                                onclick="showMotorMaintenancePopup('{{ motor.nama_motor|e }}')">
+                                            <i class="fas fa-wrench"></i> Maintenance
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-primary btn-sm" 
+                                                onclick="goToCheckout('{{ motor.nama_motor|e }}', {{ motor.harga_sewa }}, '{{ motor.foto_motor or '' }}')">
+                                            Sewa
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div style="grid-column: 1/-1; text-align: center; padding: 80px 20px; color: var(--text-muted);">
+                            <i class="fas fa-motorcycle" style="font-size: 80px; margin-bottom: 20px; display: block; opacity: 0.3;"></i>
+                            <h3 style="margin-bottom: 8px; color: var(--text-main);">Belum ada motor tersedia</h3>
+                            <p>Motor akan segera ditambahkan oleh admin</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="mobile-filter-overlay" onclick="closeMobileFilter()"></div>
+
+    <div id="motorRentedPopup" class="motor-popup-overlay" onclick="closeMotorPopup()">
+        <div class="motor-popup-content" onclick="event.stopPropagation()">
+            <div class="motor-popup-icon rented">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <h2>Motor Sedang Disewa</h2>
+            <p class="motor-popup-name" id="rentedMotorName">Motor ini sedang disewa oleh customer lain.</p>
+            <p class="motor-popup-desc">Silakan pilih motor lain atau coba lagi nanti setelah motor dikembalikan.</p>
+            <button class="btn btn-primary" onclick="closeMotorPopup()">
+                <i class="fas fa-check"></i> Mengerti
+            </button>
+        </div>
+    </div>
+
+    <div id="motorMaintenancePopup" class="motor-popup-overlay" onclick="closeMotorPopup()">
+        <div class="motor-popup-content" onclick="event.stopPropagation()">
+            <div class="motor-popup-icon maintenance">
+                <i class="fas fa-wrench"></i>
+            </div>
+            <h2>Motor Sedang Maintenance</h2>
+            <p class="motor-popup-name" id="maintenanceMotorName">Motor ini sedang dalam perawatan.</p>
+            <p class="motor-popup-desc">Silakan pilih motor lain yang tersedia untuk disewa.</p>
+            <button class="btn btn-primary" onclick="closeMotorPopup()">
+                <i class="fas fa-check"></i> Mengerti
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        // Set up login status from backend
+        window.isLoggedIn = {{ 'true' if session.get('user_id') else 'false' }};
+
+        // ===== STATE GLOBAL =====
+        const hiddenCards = new Set();
+        let animationTimeouts = [];
+
+        function clearAllTimeouts() {
+            animationTimeouts.forEach(id => clearTimeout(id));
+            animationTimeouts = [];
+        }
+
+        function safeTimeout(callback, delay) {
+            const id = setTimeout(callback, delay);
+            animationTimeouts.push(id);
+            return id;
+        }
+
+        // ===== CHECKOUT =====
+        window.goToCheckout = function(motorName, motorPrice, motorImage) {
+            const motorData = { name: motorName, price: motorPrice, image: motorImage };
+            if (!window.isLoggedIn) {
+                localStorage.setItem('pendingMotor', JSON.stringify(motorData));
+                window.location.href = '/login?next=/checkout';
+                return;
+            }
+            localStorage.setItem('selectedMotor', JSON.stringify(motorData));
+            window.location.href = '/checkout';
+        };
+
+        // FUNGSI POPUP MOTOR DISEWA
+        window.showMotorRentedPopup = function(motorName) {
+            document.getElementById('rentedMotorName').innerHTML = 
+                `<strong>${motorName}</strong> sedang disewa oleh customer lain.`;
+            document.getElementById('motorRentedPopup').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        // FUNGSI POPUP MOTOR MAINTENANCE
+        window.showMotorMaintenancePopup = function(motorName) {
+            document.getElementById('maintenanceMotorName').innerHTML = 
+                `<strong>${motorName}</strong> sedang dalam perawatan.`;
+            document.getElementById('motorMaintenancePopup').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        // FUNGSI TUTUP POPUP
+        window.closeMotorPopup = function() {
+            document.getElementById('motorRentedPopup').classList.remove('active');
+            document.getElementById('motorMaintenancePopup').classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        // ===== APPLY FILTERS =====
+        window.applyFilters = function() {
+            clearAllTimeouts();
+
+            const selectedKategoris = Array.from(
+                document.querySelectorAll('input[name="kategori"]:checked')
+            ).map(cb => cb.value.toLowerCase().trim());
+
+            const transmission = document.querySelector('input[name="transmission"]:checked').value;
+
+            const priceBtn = document.querySelector('.price-btn.active');
+            const minPrice = parseInt(priceBtn.dataset.min);
+            const maxPrice = parseInt(priceBtn.dataset.max);
+
+            const cardsToHide = [];
+            const cardsToShow = [];
+
+            document.querySelectorAll('.motor-card').forEach(card => {
+                const cardKategori  = (card.dataset.category || '').toLowerCase().trim();
+                const cardTransmisi = card.dataset.transmission || '';
+                const cardPrice     = parseInt(card.dataset.price) || 0;
+
+                const matchKategori  = selectedKategoris.length === 0 ||
+                                       selectedKategoris.includes(cardKategori);
+                const matchTransmisi = transmission === 'all' || cardTransmisi === transmission;
+                const matchPrice     = cardPrice >= minPrice && cardPrice <= maxPrice;
+
+                const shouldShow      = matchKategori && matchTransmisi && matchPrice;
+                const currentlyHidden = hiddenCards.has(card);
+
+                if (!shouldShow && !currentlyHidden) cardsToHide.push(card);
+                else if (shouldShow && currentlyHidden) cardsToShow.push(card);
+            });
+
+            // Fade OUT
+            cardsToHide.forEach((card, i) => {
+                hiddenCards.add(card);
+                safeTimeout(() => {
+                    card.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+                    card.style.opacity    = '0';
+                    card.style.transform  = 'scale(0.92) translateY(10px)';
+                    safeTimeout(() => {
+                        card.style.display    = 'none';
+                        card.style.transition = '';
+                        card.style.opacity    = '';
+                        card.style.transform  = '';
+                    }, 260);
+                }, i * 30);
+            });
+
+            // Fade IN
+            cardsToShow.forEach(card => {
+                hiddenCards.delete(card);
+                card.style.transition = 'none';
+                card.style.opacity    = '0';
+                card.style.transform  = 'scale(0.88) translateY(16px)';
+                card.style.display    = '';
+            });
+
+            if (cardsToShow.length > 0) {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        cardsToShow.forEach((card, i) => {
+                            safeTimeout(() => {
+                                card.style.transition = 'opacity 0.4s cubic-bezier(0.22,1,0.36,1), transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+                                card.style.opacity    = '1';
+                                card.style.transform  = 'scale(1) translateY(0)';
+                                safeTimeout(() => {
+                                    card.style.transition = '';
+                                    card.style.opacity    = '';
+                                    card.style.transform  = '';
+                                }, 420);
+                            }, i * 70);
+                        });
+                    });
+                });
+            }
+
+            const totalVisible = document.querySelectorAll('.motor-card').length - hiddenCards.size;
+            safeTimeout(() => {
+                document.getElementById('motorCount').textContent = totalVisible;
+            }, 300);
+        };
+
+        // ===== CLEAR ALL =====
+        window.clearAllFilters = function() {
+            document.querySelectorAll('input[name="kategori"]').forEach(cb => cb.checked = false);
+            document.querySelector('input[name="transmission"][value="all"]').checked = true;
+            document.querySelectorAll('.price-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.price-btn').classList.add('active');
+
+            hiddenCards.forEach(card => {
+                card.style.display    = '';
+                card.style.opacity    = '';
+                card.style.transform  = '';
+            });
+            hiddenCards.clear();
+
+            document.getElementById('motorCount').textContent =
+                document.querySelectorAll('.motor-card').length;
+
+            if (window.innerWidth <= 1024) closeMobileFilter();
+        };
+
+        // ===== MOBILE FILTER =====
+        window.toggleMobileFilter = function() {
+            const sidebar = document.querySelector('.filter-sidebar');
+            sidebar.classList.contains('mobile-active') ? closeMobileFilter() : openMobileFilter();
+        };
+
+        function openMobileFilter() {
+            const sidebar = document.querySelector('.filter-sidebar');
+            const overlay = document.querySelector('.mobile-filter-overlay');
+            sidebar.classList.add('mobile-active');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        window.closeMobileFilter = function() {
+            const sidebar = document.querySelector('.filter-sidebar');
+            const overlay = document.querySelector('.mobile-filter-overlay');
+            sidebar.classList.remove('mobile-active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        function autoCloseMobile() {
+            if (window.innerWidth <= 1024) {
+                safeTimeout(closeMobileFilter, 400);
+            }
+        }
+
+        // ===== INISIALISASI =====
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // Checkbox kategori
+            document.querySelectorAll('input[name="kategori"]').forEach(input => {
+                input.addEventListener('change', function() {
+                    applyFilters();
+                    autoCloseMobile();
+                });
+            });
+
+            // Radio transmisi
+            document.querySelectorAll('input[name="transmission"]').forEach(input => {
+                input.addEventListener('change', function() {
+                    applyFilters();
+                    autoCloseMobile();
+                });
+            });
+
+            // Tombol harga
+            document.querySelectorAll('.price-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    applyFilters();
+                    autoCloseMobile();
+                });
+            });
+
+            // Counter awal
+            document.getElementById('motorCount').textContent =
+                document.querySelectorAll('.motor-card').length;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const categoryParam = urlParams.get('category');
+            const transmissionParam = urlParams.get('transmission');
+
+            // Set filter berdasarkan URL jika ada
+            if (categoryParam) {
+                const cat = categoryParam.toLowerCase().trim();
+                const checkbox = document.querySelector(`input[name="kategori"][value="${cat}"]`);
+                if (checkbox) checkbox.checked = true;
+            }
+
+            if (transmissionParam) {
+                // Perhatikan case-sensitive pada value transmisi (Matic / Manual)
+                const radio = document.querySelector(`input[name="transmission"][value="${transmissionParam}"]`);
+                if (radio) {
+                    // Uncheck opsi "Semua"
+                    document.querySelector('input[name="transmission"][value="all"]').checked = false;
+                    radio.checked = true;
+                }
+            }
+
+            // Jika ada parameter dari URL, jalankan filter. Jika tidak, set counter awal.
+            if (categoryParam || transmissionParam) {
+                applyFilters();
+            } else {
+                document.getElementById('motorCount').textContent = document.querySelectorAll('.motor-card').length;
+            }
+
+            // Tutup popup dengan tombol ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeMotorPopup();
+                }
+            });
+
+            // utup popup dengan tombol ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeMotorPopup();
+                }
+            });
+        });
+    </script>
+{% endblock %}

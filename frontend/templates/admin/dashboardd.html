@@ -1,0 +1,245 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard - Admin{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>Dashboard</h1>
+        <p>Overview of your rental business performance</p>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon green">
+            <i class="fas fa-wallet"></i>
+        </div>
+        <div class="stat-info">
+            <p>Pendapatan Hari Ini</p>
+            <h3 title="Rp {{ '{:,.0f}'.format(today_income) }}">Rp {{ "{:,.0f}".format(today_income) }}</h3>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon blue">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-info">
+            <p>Pendapatan Bulan Ini</p>
+            <h3 title="Rp {{ '{:,.0f}'.format(month_income) }}">Rp {{ "{:,.0f}".format(month_income) }}</h3>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon orange">
+            <i class="fas fa-motorcycle"></i>
+        </div>
+        <div class="stat-info">
+            <p>Motor Disewa</p>
+            <h3>{{ rented_count }}</h3>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon pink">
+            <i class="fas fa-receipt"></i>
+        </div>
+        <div class="stat-info">
+            <p>Total Transaksi</p>
+            <h3>{{ total_transactions }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="fleet-section">
+    <h2 class="admin-section-title">
+        <i class="fas fa-truck"></i>
+        Status Armada
+    </h2>
+    <div class="fleet-stats">
+        <div class="fleet-item">
+            <div class="fleet-label">
+                <i class="fas fa-motorcycle" style="color: var(--primary);"></i>
+                Total Motor
+            </div>
+            <div class="fleet-value" style="color: var(--primary);">{{ total_motors }}</div>
+            <div class="progress-bar">
+                <div class="progress-fill primary" style="width: 100%"></div>
+            </div>
+        </div>
+
+        <div class="fleet-item">
+            <div class="fleet-label">
+                <i class="fas fa-key" style="color: #ff9800;"></i>
+                Disewa
+            </div>
+            <div class="fleet-value" style="color: #ff9800;">{{ rented_count }}/{{ total_motors }}</div>
+            <div class="progress-bar">
+                <div class="progress-fill warning" style="width: {{ (rented_count/total_motors*100) if total_motors > 0 else 0 }}%"></div>
+            </div>
+            <div class="fleet-utilization">
+                {{ "%.0f"|format((rented_count/total_motors*100) if total_motors > 0 else 0) }}% Utilization
+            </div>
+        </div>
+
+        <div class="fleet-item">
+            <div class="fleet-label">
+                <i class="fas fa-check-circle" style="color: #00e676;"></i>
+                Tersedia
+            </div>
+            <div class="fleet-value" style="color: #00e676;">{{ available_count }}/{{ total_motors }}</div>
+            <div class="progress-bar">
+                <div class="progress-fill success" style="width: {{ (available_count/total_motors*100) if total_motors > 0 else 0 }}%"></div>
+            </div>
+            <div class="fleet-utilization">
+                Ready untuk dipesan.
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="income-section">
+    <div class="income-header">
+        <h2 class="admin-section-title" style="margin-bottom: 0;">
+            <i class="fas fa-chart-area"></i>
+            Trend Pendapatan
+        </h2>
+        <select class="filter-select" id="timeFilter" onchange="updateChart()">
+            <option value="7">Last 7 Days</option>
+            <option value="30" selected>Last 30 Days</option>
+            <option value="90">Last 3 Months</option>
+            <option value="365">Last Year</option>
+        </select>
+    </div>
+    <div class="chart-container">
+        <canvas id="incomeChart"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Chart data from backend
+    const chartData = {
+        labels: {{ chart_labels|tojson }},
+        datasets: [{
+            label: 'Income (Rp)',
+            data: {{ chart_data|tojson }},
+            borderColor: '#ff5722',
+            backgroundColor: 'rgba(255, 87, 34, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#ff5722',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
+        }]
+    };
+
+    // Chart configuration
+    const chartConfig = {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            return 'Rp ' + context.parsed.y.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return 'Rp ' + value.toLocaleString('id-ID');
+                        },
+                        font: {
+                            size: 12
+                        },
+                        color: '#757575'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        },
+                        color: '#757575',
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    };
+
+    // Initialize chart
+    let incomeChart = new Chart(document.getElementById('incomeChart'), chartConfig);
+
+    // Update chart based on filter
+    function updateChart() {
+        const filter = document.getElementById('timeFilter').value;
+        
+        // Fetch new data based on filter
+        fetch(`/admin/dashboard/chart-data?days=${filter}`)
+            .then(response => response.json())
+            .then(data => {
+                incomeChart.data.labels = data.labels;
+                incomeChart.data.datasets[0].data = data.values;
+                incomeChart.update();
+            })
+            .catch(error => {
+                console.error('Error fetching chart data:', error);
+            });
+    }
+
+    // Animate progress bars on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBars = document.querySelectorAll('.progress-fill');
+        progressBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0';
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 300);
+        });
+    });
+</script>
+{% endblock %}

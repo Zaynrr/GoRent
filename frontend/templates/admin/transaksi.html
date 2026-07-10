@@ -1,0 +1,860 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Transaction History - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>Riwayat Transaksi</h1>
+        <p>Mengelola dan melihat semua data transaksi.</p>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <label for="pdfDateFilter" style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">
+            <i class="fas fa-calendar-alt"></i> Filter Export:
+        </label>
+        <select id="pdfDateFilter" class="admin-select" style="padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: white;">
+            <option value="all">Semua Waktu</option>
+            <option value="7">7 Hari Terakhir</option>
+            <option value="30">30 Hari Terakhir</option>
+        </select>
+        <button onclick="exportPDF('all')" class="btn btn-sm" style="background: #d32f2f; color: white; border: none; cursor: pointer;">
+            <i class="fas fa-file-pdf"></i> Export PDF
+        </button>
+        <button onclick="exportPDF('success')" class="btn btn-sm" style="background: #388e3c; color: white; border: none; cursor: pointer;">
+            <i class="fas fa-file-pdf"></i> Export Success Only
+        </button>
+    </div>
+</div>
+
+<!-- Overdue Alert Banner -->
+{% if overdue_count > 0 %}
+<div style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border-left: 5px solid #d32f2f; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 28px; color: #d32f2f;"></i>
+        <div>
+            <strong style="color: #c62828; font-size: 16px;">Peringatan: {{ overdue_count }} Motor Belum Dikembalikan!</strong>
+            <p style="margin: 4px 0 0 0; color: #b71c1c; font-size: 13px;">
+                Ada {{ overdue_count }} transaksi yang sudah melewati batas waktu pengembalian.
+            </p>
+        </div>
+    </div>
+    <button class="btn btn-sm" style="background: #d32f2f; color: white;" onclick="showOverdueModal()">
+        <i class="fas fa-eye"></i> Lihat Detail
+    </button>
+</div>
+{% endif %}
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">
+            <i class="fas fa-receipt"></i>
+        </div>
+        <div class="stat-info">
+            <p>Total Transaksi</p>
+            <h3>{{ total_transactions }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-info">
+            <p>Pembayaran Sukses</p>
+            <h3>{{ success_count }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon orange">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="stat-info">
+            <p>Sedang Disewa</p>
+            <h3>{{ rented_count }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #fce4ec; color: #c2185b;">
+            <i class="fas fa-id-card"></i>
+        </div>
+        <div class="stat-info">
+            <p>KTP Belum Verif</p>
+            <h3>{{ unverified_ktp_count }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Table Container -->
+<div class="admin-table-container">
+    <div class="admin-table-header">
+        <div class="admin-search-box">
+            <i class="fas fa-search" style="color: var(--text-muted);"></i>
+            <input type="text" id="searchInput" placeholder="Search by order ID or customer name..." onkeyup="searchTable()">
+        </div>
+        
+        <!-- DROPDOWN FILTER -->
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <label for="filterSelect" style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">
+                <i class="fas fa-filter" style="color: var(--primary); margin-right: 4px;"></i>
+                Filter:
+            </label>
+            <select id="filterSelect" 
+                    onchange="applyFilter(this.value)"
+                    style="padding: 8px 32px 8px 12px; 
+                        border: 2px solid var(--border-color); 
+                        border-radius: 8px; 
+                        font-size: 14px; 
+                        font-family: var(--font-main);
+                        font-weight: 600;
+                        color: var(--text-main);
+                        background: white;
+                        cursor: pointer;
+                        transition: var(--transition);
+                        appearance: none;
+                        -webkit-appearance: none;
+                        -moz-appearance: none;
+                        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><path fill="%23757575" d="M6 9L1 4h10z"/></svg>');
+                        background-repeat: no-repeat;
+                        background-position: right 10px center;
+                        min-width: 200px;">
+                <option value="all" {% if filter_type == 'all' %}selected{% endif %}>
+                    📋 Semua Transaksi
+                </option>
+                <option value="success" {% if filter_type == 'success' %}selected{% endif %}>
+                    ✅ Success ({{ success_count }})
+                </option>
+                <option value="pending" {% if filter_type == 'pending' %}selected{% endif %}>
+                    ⏳ Pending ({{ pending_count }})
+                </option>
+                <option value="cancelled" {% if filter_type == 'cancelled' %}selected{% endif %}>
+                    ❌ Cancelled ({{ cancelled_count }})
+                </option>
+            </select>
+        </div>
+    </div>
+
+    <div class="admin-table-wrapper">
+        <table class="admin-table" id="transactionTable" style="min-width: 2200px;">
+            <thead>
+                <tr>
+                    <th style="min-width: 150px;">Order ID</th>
+                    <th style="min-width: 180px;">Customer</th>
+                    <th style="min-width: 200px;">Motor</th>
+                    <th style="min-width: 180px;">Masa Rental</th>
+                    <th style="min-width: 120px;">Total</th>
+                    <th style="min-width: 150px;">No Hp</th>
+                    <th style="min-width: 140px;">Voucher</th>
+                    <th style="min-width: 130px;">Metode Pembayaran</th>
+                    <th style="min-width: 160px;">Kondisi Motor</th>
+                    <th style="min-width: 120px;">Denda Kerusakan</th>
+                    <th style="min-width: 150px;">Status Rental</th>
+                    <th style="min-width: 100px;">KTP</th>
+                    <th style="min-width: 130px;">Status KTP</th>
+                    <th style="min-width: 120px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cust in transactions %}
+                {% set is_overdue = cust.status_rental == 'Disewa' and cust.tgl_kembali.date() < today_date %}
+                <tr data-order-id="{{ cust.order_id|lower }}" 
+                    data-customer="{{ cust.nama_cust|lower }}"
+                    data-payment="{{ cust.status_pembayaran }}"
+                    data-transaction-id="{{ cust.id_transaksi }}"
+                    {% if is_overdue %}style="background-color: #ffebee !important;"{% endif %}>
+                    <td>
+                        <strong style="font-family: 'Courier New', monospace; font-size: 12px; color: var(--primary);">
+                            {{ cust.order_id }}
+                        </strong>
+                        {% if is_overdue %}
+                            <div style="margin-top: 4px;">
+                                <span style="background: #d32f2f; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold;">
+                                    ⚠️ OVERDUE
+                                </span>
+                            </div>
+                        {% endif %}
+                    </td>
+                    
+                    <td>
+                        <strong>{{ cust.nama_cust }}</strong>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                            {{ cust.email_cust }}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            {% if cust.motor.foto_motor %}
+                                <img src="{{ cust.motor.foto_motor }}" 
+                                     alt="{{ cust.motor.nama_motor }}" 
+                                     class="motor-thumb">
+                            {% else %}
+                                <div class="motor-thumb-placeholder">
+                                    <i class="fas fa-motorcycle"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <strong>{{ cust.motor.nama_motor }}</strong>
+                                <div style="font-size: 12px; color: var(--text-muted);">
+                                    {{ cust.motor.cc_motor }}cc • {{ cust.motor.transmisi }}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size: 13px;">
+                            <div>
+                                <i class="fas fa-calendar-check" style="color: var(--primary);"></i> 
+                                {{ cust.tgl_sewa.strftime('%d/%m/%Y') }}
+                            </div>
+                            <div style="margin-top: 4px;">
+                                <i class="fas fa-calendar-times" style="color: {% if is_overdue %}#d32f2f{% else %}var(--text-muted){% endif %};"></i> 
+                                {{ cust.tgl_kembali.strftime('%d/%m/%Y') }}
+                            </div>
+                            <div style="margin-top: 4px; color: var(--text-muted); font-size: 12px;">
+                                {{ cust.total_hari }} hari
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <strong style="color: var(--primary); font-size: 15px;">
+                            Rp {{ "{:,.0f}".format(cust.total_harga) }}
+                        </strong>
+                    </td>
+                    <td>
+                        <span style="font-size: 13px;">
+                            <i class="fas fa-phone" style="color: var(--primary); margin-right: 4px;"></i>
+                            {{ cust.hp_cust }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if cust.id_voucher and cust.voucher %}
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <!-- Badge Kode Voucher (dari relasi) -->
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); color: #ef6c00; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; font-family: 'Courier New', monospace; border: 1px solid #ffcc80;">
+                                        ️ {{ cust.voucher.kode_voucher }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Info Diskon (dari snapshot nominal_diskon) -->
+                                {% if cust.nominal_diskon and cust.nominal_diskon > 0 %}
+                                    <div style="font-size: 11px; color: #2e7d32; font-weight: 600;">
+                                        <i class="fas fa-tag"></i> Hemat Rp {{ "{:,.0f}".format(cust.nominal_diskon) }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% elif cust.nominal_diskon and cust.nominal_diskon > 0 %}
+                            <!-- Voucher sudah dihapus, tapi diskon masih tercatat -->
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 1px solid #ef9a9a;">
+                                    <i class="fas fa-trash"></i> Voucher Dihapus
+                                </span>
+                                <div style="font-size: 11px; color: #2e7d32; font-weight: 600;">
+                                    <i class="fas fa-tag"></i> Hemat Rp {{ "{:,.0f}".format(cust.nominal_diskon) }}
+                                </div>
+                            </div>
+                        {% else %}
+                            <span style="color: var(--text-muted); font-size: 12px;">
+                                <i class="fas fa-minus-circle"></i> Tidak ada
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if cust.status_pembayaran == 'success' %}
+                            <span class="admin-status success">
+                                <i class="fas fa-check-circle"></i> Success
+                            </span>
+                        {% elif cust.status_pembayaran == 'pending' %}
+                            <span class="admin-status pending">
+                                <i class="fas fa-clock"></i> Pending
+                            </span>
+                        {% elif cust.status_pembayaran == 'cancelled' %}
+                            <span class="admin-status failed">
+                                <i class="fas fa-times-circle"></i> Cancelled
+                            </span>
+                        {% elif cust.status_pembayaran == 'failed' %}
+                            <span class="admin-status failed">
+                                <i class="fas fa-times-circle"></i> Failed
+                            </span>
+                        {% else %}
+                            <span class="admin-status">
+                                {{ cust.status_pembayaran }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <select class="admin-select" 
+                                onchange="updateTransaction({{ cust.id_transaksi }}, 'kondisi_motor', this.value); toggleDendaInput({{ cust.id_transaksi }}, this.value)"
+                                {% if cust.status_pembayaran != 'success' or cust.status_pembayaran_denda == 'Lunas' %}disabled{% endif %}
+                                style="padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: white; width: 100%; margin-bottom: 6px;">
+                            <option value="Tidak Ada Kerusakan" {% if cust.kondisi_motor == 'Tidak Ada Kerusakan' %}selected{% endif %}>
+                                ✅ Tidak ada kerusakan
+                            </option>
+                            <option value="Body Lecet/Pecah" {% if cust.kondisi_motor == 'Body Lecet/Pecah' %}selected{% endif %}>
+                                ⚠️ Body Lecet/Pecah
+                            </option>
+                            <option value="Spion Rusak/Hilang" {% if cust.kondisi_motor == 'Spion Rusak/Hilang' %}selected{% endif %}>
+                                ⚠️ Spion Rusak/Hilang
+                            </option>
+                            <option value="Lampu Pecah/Mati" {% if cust.kondisi_motor == 'Lampu Pecah/Mati' %}selected{% endif %}>
+                                ⚠️ Lampu Pecah/Mati
+                            </option>
+                            <option value="Ban/Velg Bermasalah" {% if cust.kondisi_motor == 'Ban/Velg Bermasalah' %}selected{% endif %}>
+                                ⚠️ Ban/Velg Bermasalah
+                            </option>
+                            <option value="Mesin Bermasalah" {% if cust.kondisi_motor == 'Mesin Bermasalah' %}selected{% endif %}>
+                                ⚠️ Mesin Bermasalah
+                            </option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" 
+                               id="denda_{{ cust.id_transaksi }}"
+                               class="admin-input"
+                               value="{{ cust.denda_kerusakan or 0 }}"
+                               onchange="updateTransaction({{ cust.id_transaksi }}, 'denda_kerusakan', this.value)"
+                               {% if cust.kondisi_motor == 'Tidak Ada Kerusakan' or cust.status_pembayaran != 'success' or cust.status_pembayaran_denda == 'Lunas' %}disabled{% endif %}
+                               style="width: 100%; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px;"
+                               placeholder="0">
+                        
+                        {% if cust.denda_kerusakan and cust.denda_kerusakan > 0 %}
+                            <select class="admin-select"
+                                    onchange="updateTransaction({{ cust.id_transaksi }}, 'status_pembayaran_denda', this.value)"
+                                    {% if cust.status_pembayaran_denda == 'Lunas' %}disabled{% endif %}
+                                    style="margin-top: 6px; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 12px; width: 100%; background: {% if cust.status_pembayaran_denda == 'Lunas' %}#e8f5e9{% else %}#ffebee{% endif %}; font-weight: 600;">
+                                <option value="Belum Lunas" {% if cust.status_pembayaran_denda != 'Lunas' %}selected{% endif %}>
+                                    ⏳ Belum Lunas
+                                </option>
+                                <option value="Lunas" {% if cust.status_pembayaran_denda == 'Lunas' %}selected{% endif %}>
+                                    ✅ Lunas
+                                </option>
+                            </select>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <select class="admin-select"
+                                onchange="handleRentalChange({{ cust.id_transaksi }}, this, '{{ cust.status_verifikasi_ktp }}')"
+                                {% if cust.status_rental == 'Dikembalikan' or cust.status_pembayaran != 'success' %}disabled{% endif %}
+                                style="padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: white;">
+                            <option value="Disewa" {% if cust.status_rental == 'Disewa' %}selected{% endif %}>
+                                🔑 Disewa
+                            </option>
+                            <option value="Dikembalikan" {% if cust.status_rental == 'Dikembalikan' %}selected{% endif %}>
+                                ✅ Dikembalikan
+                            </option>
+                        </select>
+                    </td>
+                    <td>
+                        {% if cust.KTP and cust.KTP != '-' and cust.status_pembayaran not in ['cancelled', 'failed', 'expire', 'deny'] %}
+                            <button class="admin-btn-icon admin-btn-view" 
+                                    onclick="viewKTP('{{ cust.KTP }}', '{{ cust.nama_cust }}')"
+                                    title="View KTP">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        {% else %}
+                            <span style="color: var(--text-muted); font-size: 12px;">No KTP</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <select class="admin-select"
+                                onchange="updateTransaction({{ cust.id_transaksi }}, 'status_verifikasi_ktp', this.value)"
+                                {% if cust.status_verifikasi_ktp == 'Verified' or cust.status_pembayaran != 'success' %}disabled{% endif %}
+                                style="padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: white; width: 140px;">
+                            <option value="Belum Diverifikasi" {% if cust.status_verifikasi_ktp == 'Belum Diverifikasi' %}selected{% endif %}>
+                                ⏳ Belum Diverifikasi
+                            </option>
+                            <option value="Verified" {% if cust.status_verifikasi_ktp == 'Verified' %}selected{% endif %}>
+                                ✅ Verified
+                            </option>
+                        </select>
+                    </td>
+                    
+                    <td>
+                        <div class="admin-actions" style="flex-direction: column; gap: 4px;">
+                            
+                            {% if cust.status_rental == 'Disewa' and cust.status_pembayaran == 'success' and is_overdue %}
+                                <button class="admin-btn-icon" 
+                                        style="background: #fff3e0; color: #ef6c00; width: 100%;"
+                                        onclick="sendReminder({{ cust.id_transaksi }}, 'return')"
+                                        title="Kirim Reminder WA">
+                                    <i class="fab fa-whatsapp"></i>
+                                </button>
+                            {% endif %}
+
+                            {% if cust.kondisi_motor != 'Tidak Ada Kerusakan' and cust.status_rental == 'Dikembalikan' and cust.status_pembayaran_denda != 'Lunas' %}
+                                <button class="admin-btn-icon" 
+                                        style="background: #ffebee; color: #c62828; width: 100%;"
+                                        onclick="sendReminder({{ cust.id_transaksi }}, 'damage')"
+                                        title="Tagih Denda Kerusakan via WA">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="14" style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                        <i class="fas fa-receipt" style="font-size: 64px; display: block; margin-bottom: 16px; opacity: 0.3;"></i>
+                        <h3 style="margin-bottom: 8px;">Belum ada transaksi</h3>
+                        <p>Transaksi akan muncul setelah customer melakukan pemesanan</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="admin-pagination">
+        <span>
+            Page {{ pagination.page }} of {{ pagination.pages }} 
+            ({{ pagination.total }} total transactions)
+        </span>
+        <div class="admin-actions">
+            {% if pagination.has_prev %}
+                <a href="{{ url_for('admin.admin_transaksi', page=pagination.prev_num, filter=filter_type) }}" 
+                class="admin-btn-icon admin-btn-view" 
+                title="Previous Page">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            {% else %}
+                <span class="admin-btn-icon" style="background: #f5f5f5; color: #bdbdbd; cursor: not-allowed;">
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+            {% endif %}
+            
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}
+                    {% if p == pagination.page %}
+                        <span class="admin-btn-icon admin-btn-edit" style="font-weight: 700;">
+                            {{ p }}
+                        </span>
+                    {% else %}
+                        <a href="{{ url_for('admin.admin_transaksi', page=p, filter=filter_type) }}" 
+                        class="admin-btn-icon admin-btn-view">
+                            {{ p }}
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <span style="padding: 0 8px; color: var(--text-muted);">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+                <a href="{{ url_for('admin.admin_transaksi', page=pagination.next_num, filter=filter_type) }}" 
+                class="admin-btn-icon admin-btn-view" 
+                title="Next Page">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            {% else %}
+                <span class="admin-btn-icon" style="background: #f5f5f5; color: #bdbdbd; cursor: not-allowed;">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- KTP Modal -->
+<div id="ktpModal" class="admin-modal" onclick="closeKTPModal()">
+    <div style="max-width: 90%; max-height: 90%; display: flex; flex-direction: column; align-items: center; gap: 16px;" onclick="event.stopPropagation()">
+        <div style="background: white; padding: 16px 24px; border-radius: 12px; display: flex; align-items: center; gap: 12px;">
+            <i class="fas fa-id-card" style="font-size: 24px; color: var(--primary);"></i>
+            <div>
+                <h3 style="font-size: 18px; margin: 0;" id="ktpCustomerName">Customer Name</h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Foto KTP</p>
+            </div>
+        </div>
+        <img id="ktpImage" src="" alt="KTP" style="max-width: 100%; max-height: 70vh; border-radius: 12px; box-shadow: var(--shadow-xl);">
+        <button class="btn btn-primary" onclick="closeKTPModal()">
+            <i class="fas fa-times"></i> Close
+        </button>
+    </div>
+</div>
+
+<!-- Overdue Modal -->
+<div id="overdueModal" class="admin-modal" onclick="closeOverdueModal()">
+    <div class="admin-modal-content" style="max-width: 800px;" onclick="event.stopPropagation()">
+        <div class="admin-modal-header" style="border-bottom-color: #d32f2f;">
+            <h2 style="color: #d32f2f;">
+                <i class="fas fa-exclamation-triangle"></i> 
+                Peringatan: Motor Belum Dikembalikan
+            </h2>
+        </div>
+        <div style="padding: 20px 0;">
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Terdapat <strong style="color: #d32f2f;">{{ overdue_count }}</strong> transaksi yang sudah melewati batas waktu pengembalian. 
+                Segera hubungi customer untuk pengembalian motor.
+            </p>
+            
+            <div style="max-height: 400px; overflow-y: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead style="background: #ffebee; position: sticky; top: 0;">
+                        <tr>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #d32f2f; color: #c62828;">Order ID</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #d32f2f; color: #c62828;">Customer</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #d32f2f; color: #c62828;">Motor</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #d32f2f; color: #c62828;">Batas Kembali</th>
+                            <th style="padding: 12px; text-align: center; border-bottom: 2px solid #d32f2f; color: #c62828;">Terlambat</th>
+                            <th style="padding: 12px; text-align: center; border-bottom: 2px solid #d32f2f; color: #c62828;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Di dalam loop overdue_list -->
+                        {% for overdue in overdue_list %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 12px; font-family: 'Courier New', monospace; font-size: 12px; color: var(--primary);">
+                                {{ overdue.order_id }}
+                            </td>
+                            <td style="padding: 12px;">
+                                <strong>{{ overdue.nama_cust }}</strong>
+                                <div style="font-size: 12px; color: var(--text-muted);">{{ overdue.hp_cust }}</div>
+                            </td>
+                            <td style="padding: 12px;">{{ overdue.motor.nama_motor }}</td>
+                            <td style="padding: 12px;">{{ overdue.tgl_kembali.strftime('%d %b %Y') }}</td>
+                            <td style="padding: 12px; text-align: center;">
+                                <span style="background: #d32f2f; color: white; padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 12px;">
+                                    {{ overdue.days_overdue }} hari
+                                </span>
+                            </td>
+                            <td style="padding: 12px; text-align: center;">
+                                <button class="admin-btn-icon" 
+                                        style="background: #25D366; color: white;"
+                                        onclick="sendReminder({{ overdue.id_transaksi }})"
+                                        title="Kirim Reminder WA">
+                                    <i class="fab fa-whatsapp"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="admin-modal-actions">
+            <button class="btn btn-primary" onclick="sendAllReminders()">
+                <i class="fab fa-whatsapp"></i> Kirim Reminder ke Semua
+            </button>
+            <button class="btn" style="background: var(--bg-secondary);" onclick="closeOverdueModal()">
+                <i class="fas fa-times"></i> Tutup
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ===== FUNGSI BARU: EXPORT PDF DENGAN FILTER TANGGAL =====
+    function exportPDF(status = 'all') {
+        const days = document.getElementById('pdfDateFilter').value;
+        let url = `{{ url_for('admin.export_transaksi_pdf') }}?days=${days}`;
+        
+        if (status !== 'all') {
+            url += `&status=${status}`;
+        }
+        
+        // Redirect browser ke URL tersebut untuk unduh PDF
+        window.location.href = url;
+    }
+    
+    // Auto show overdue modal jika ada overdue
+    {% if overdue_count > 0 %}
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+            showOverdueModal();
+        }, 500);
+    });
+    {% endif %}
+    
+    // ===== SEARCH TABLE =====
+    function searchTable() {
+        const input = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#transactionTable tbody tr');
+        
+        rows.forEach(row => {
+            const orderId = row.getAttribute('data-order-id') || '';
+            const customer = row.getAttribute('data-customer') || '';
+            
+            if (orderId.includes(input) || customer.includes(input)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    // ===== APPLY FILTER (REDIRECT DENGAN URL PARAMETER) =====
+    function applyFilter(filterType) {
+        // Redirect ke URL dengan parameter filter
+        // Reset ke page 1 saat filter berubah
+        window.location.href = `{{ url_for('admin.admin_transaksi') }}?filter=${filterType}&page=1`;
+    }
+
+    // ===== SEARCH TABLE (Client-side only) =====
+    function searchTable() {
+        const input = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#transactionTable tbody tr');
+        
+        rows.forEach(row => {
+            const orderId = row.getAttribute('data-order-id') || '';
+            const customer = row.getAttribute('data-customer') || '';
+            
+            if (orderId.includes(input) || customer.includes(input)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    // ===== FUNGSI BARU: VALIDASI STATUS RENTAL (POP-UP KTP) =====
+    function handleRentalChange(transactionId, selectElement, ktpStatus) {
+        const newValue = selectElement.value;
+        const oldValue = newValue === 'Dikembalikan' ? 'Disewa' : 'Dikembalikan';
+
+        if (newValue === 'Dikembalikan') {
+            // Validasi KTP: Jika belum di verifikasi, tolak perubahan!
+            if (ktpStatus !== 'Verified') {
+                alert('⚠️ KTP BELUM DIVERIFIKASI!\n\nTidak dapat mengubah status menjadi Dikembalikan. Silakan verifikasi KTP customer ini terlebih dahulu.');
+                selectElement.value = oldValue; // Kembalikan ke pilihan 'Disewa'
+                return;
+            }
+
+            // Jika KTP sudah terverifikasi, munculkan konfirmasi
+            if (!confirm('Tandai motor sudah dikembalikan?\nStatus motor akan berubah menjadi Tersedia dan data Foto KTP akan langsung DIHAPUS dari sistem.')) {
+                selectElement.value = oldValue; // Batalkan jika admin klik Cancel
+                return;
+            }
+        }
+
+        // Lanjut panggil fungsi updateTransaction jika semuanya aman
+        updateTransaction(transactionId, 'status_rental', newValue);
+    }
+
+    // ===== UPDATE TRANSACTION =====
+    function updateTransaction(transactionId, field, value) {
+        fetch(`/admin/transaksi/update/${transactionId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                field: field,
+                value: value
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('✅ Data berhasil diupdate!', 'success');
+                
+                const fieldsToRefresh = [
+                    'status_rental', 
+                    'kondisi_motor', 
+                    'denda_kerusakan', 
+                    'status_pembayaran_denda', 
+                    'status_verifikasi_ktp'
+                ];
+                
+                // Jika field yang diubah ada di dalam daftar di atas, maka refresh halaman
+                if (fieldsToRefresh.includes(field)) {
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                }
+                
+            } else {
+                showNotification('❌ Gagal update: ' + data.error, 'error');
+                setTimeout(() => location.reload(), 1500);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('❌ Terjadi kesalahan', 'error');
+        });
+    }
+
+    // ===== TOGGLE DENDA INPUT =====
+    function toggleDendaInput(transactionId, kondisiValue) {
+        const dendaInput = document.getElementById(`denda_${transactionId}`);
+        
+        if (dendaInput) {
+            if (kondisiValue === 'Tidak Ada Kerusakan') {
+                dendaInput.disabled = true;
+                dendaInput.value = 0;
+                
+                // Otomatis update ke database bahwa denda direset jadi 0
+                updateTransaction(transactionId, 'denda_kerusakan', 0);
+            } else {
+                dendaInput.disabled = false;
+                dendaInput.focus(); 
+            }
+        }
+    }
+    
+    // ===== SEND REMINDER WA (GABUNGAN) =====
+    function sendReminder(transactionId, jenis = 'return') {
+        // Siapkan variabel bawaan (untuk pengembalian motor)
+        let pesanKonfirmasi = 'Kirim reminder WhatsApp ke customer?';
+        let urlTarget = `/admin/transaksi/send-reminder/${transactionId}`;
+        let pesanLoading = '📱 Mengirim reminder...';
+
+        // Jika yang diklik adalah tombol Denda Kerusakan, ubah isinya
+        if (jenis === 'damage') {
+            pesanKonfirmasi = 'Kirim pesan WhatsApp tagihan denda kerusakan ke customer ini?';
+            urlTarget = `/admin/transaksi/send-damage-reminder/${transactionId}`;
+            pesanLoading = '📱 Mengirim tagihan denda...';
+        }
+
+        if (!confirm(pesanKonfirmasi)) {
+            return;
+        }
+        
+        showNotification(pesanLoading, 'info');
+        
+        fetch(urlTarget, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('✅ ' + data.message, 'success');
+            } else {
+                showNotification('❌ Gagal: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('❌ Terjadi kesalahan pada server', 'error');
+        });
+    }
+    
+    // ===== SEND ALL REMINDERS =====
+    function sendAllReminders() {
+        if (!confirm('Kirim reminder ke SEMUA customer yang terlambat?')) {
+            return;
+        }
+        
+        const overdueIds = [{% for overdue in overdue_list %}{{ overdue.id_transaksi }}{% if not loop.last %}, {% endif %}{% endfor %}];
+        
+        let successCount = 0;
+        let failCount = 0;
+        
+        showNotification('📱 Mengirim reminder ke semua customer...', 'info');
+        
+        Promise.all(overdueIds.map(id => 
+            fetch(`/admin/transaksi/send-reminder/${id}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            }).then(r => r.json())
+        ))
+        .then(results => {
+            results.forEach(result => {
+                if (result.success) successCount++;
+                else failCount++;
+            });
+            
+            showNotification(
+                `✅ Terkirim: ${successCount} | ❌ Gagal: ${failCount}`,
+                failCount === 0 ? 'success' : 'warning'
+            );
+            
+            if (successCount > 0) {
+                setTimeout(() => closeOverdueModal(), 1500);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('❌ Terjadi kesalahan', 'error');
+        });
+    }
+    
+    // ===== OVERDUE MODAL =====
+    function showOverdueModal() {
+        document.getElementById('overdueModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeOverdueModal() {
+        document.getElementById('overdueModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    // ===== VIEW KTP =====
+    function viewKTP(ktpUrl, customerName) {
+        document.getElementById('ktpImage').src = ktpUrl;
+        document.getElementById('ktpCustomerName').textContent = customerName;
+        document.getElementById('ktpModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeKTPModal() {
+        document.getElementById('ktpModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    // ===== NOTIFICATION =====
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        const bgColor = {
+            'success': '#e8f5e9',
+            'error': '#ffebee',
+            'info': '#e3f2fd',
+            'warning': '#fff3e0'
+        }[type] || '#e8f5e9';
+        
+        const textColor = {
+            'success': '#2e7d32',
+            'error': '#c62828',
+            'info': '#1565c0',
+            'warning': '#ef6c00'
+        }[type] || '#2e7d32';
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 16px 24px;
+            background: ${bgColor};
+            color: ${textColor};
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            animation: slideInRight 0.3s ease;
+            font-weight: 600;
+            max-width: 400px;
+        `;
+        notification.innerHTML = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+    
+    // ===== KEYBOARD SHORTCUTS =====
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeKTPModal();
+            closeOverdueModal();
+        }
+    });
+    
+    // ===== ANIMATIONS =====
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %}

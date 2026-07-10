@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GoRent{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-bolt"></i> GoRent
+            </a>
+            
+            <!-- WRAPPER UNTUK SEMUA MENU -->
+            <div class="navbar-menu" id="navbarMenu">
+                <ul class="nav-links">
+                    <li><a href="/">Beranda</a></li>
+                    <li><a href="/motors">Rentals</a></li>
+                    <li><a href="#">Location</a></li>
+                    {% if session.get('user_id') %}
+                        <li><a href="/history">Riwayat</a></li>
+                    {% endif %}
+                </ul>
+                <div class="nav-actions">
+                    {% if session.get('user_id') %}
+                        <span class="user-greeting">
+                            <i class="fas fa-user-circle"></i> Halo, {{ session.get('user_name') }}
+                        </span>
+                        <a href="/logout" class="btn btn-primary">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    {% else %}
+                        <a href="/login" class="btn btn-ghost">Login</a>
+                        <a href="/register" class="btn btn-primary">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars" id="menuIcon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Flash Messages - Kecuali di halaman login & register -->
+    {% if request.endpoint and request.endpoint.split('.')[-1] not in ['login', 'register', 'reset_password', 'forgot_password'] %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="flash-alert flash-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    {% endif %}
+
+    <!-- ===== KONTEN HALAMAN ===== -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3><i class="fas fa-bolt"></i> GoRent</h3>
+                    <p>Sewa motor premium terpercaya.</p>
+                </div>
+                <div class="footer-contact">
+                    <h4>Hubungi Kami</h4>
+                    <p><i class="fas fa-phone"></i> +62 812-3456-7890</p>
+                    <p><i class="fas fa-envelope"></i> info@gorent.id</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 GoRent. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Panggil Script Global dari File Eksternal -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

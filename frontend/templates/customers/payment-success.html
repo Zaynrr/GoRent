@@ -1,0 +1,453 @@
+{% extends 'customers/base.html' %}
+
+{% block title %}
+    {% if transaksi.status_pembayaran == 'success' %}
+        Pembayaran Berhasil - GoRent
+    {% elif transaksi.status_pembayaran == 'pending' %}
+        Menunggu Pembayaran - GoRent
+    {% elif transaksi.status_pembayaran == 'cancelled' %}
+        Pesanan Dibatalkan - GoRent
+    {% else %}
+        Status Pembayaran - GoRent
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<section class="success-section">
+    <div class="container success-container">
+        
+        {% if transaksi.status_pembayaran == 'success' %}
+            <div class="success-header">
+                <div class="success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h1>Pembayaran Berhasil!</h1>
+                <p>Terima kasih telah menggunakan layanan GoRent</p>
+            </div>
+            
+        {% elif transaksi.status_pembayaran == 'pending' %}
+            <div class="success-header">
+                <div class="success-icon" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); box-shadow: 0 8px 32px rgba(255, 152, 0, 0.3);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h1>Menunggu Pembayaran</h1>
+                <p>Silakan selesaikan pembayaran Anda sebelum batas waktu</p>
+            </div>
+            
+            <div style="background: #fff3e0; border: 2px solid #ffcc80; border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center;">
+                <p style="color: #ef6c00; font-weight: 600; margin-bottom: 8px;">
+                    <i class="fas fa-hourglass-half"></i> Batas Waktu Pembayaran
+                </p>
+                
+                <div style="font-size: 20px; font-weight: 800; color: #d32f2f;">
+                    {% if transaksi.waktu_expired %}
+                        {{ transaksi.waktu_expired.strftime('%d %B %Y, %H:%M WIB') }}
+                    {% else %}
+                        Menunggu data dari sistem... (Refresh halaman)
+                    {% endif %}
+                </div>
+                
+                <p style="font-size: 12px; color: #757575; margin-top: 8px;">
+                    Pesanan akan otomatis dibatalkan jika melewati batas waktu di atas
+                </p>
+            </div>
+            
+        {% elif transaksi.status_pembayaran == 'cancelled' %}
+            <div class="success-header">
+                <div class="success-icon" style="background: linear-gradient(135deg, #f44336 0%, #c62828 100%); box-shadow: 0 8px 32px rgba(244, 67, 54, 0.3);">
+                    <i class="fas fa-times"></i>
+                </div>
+                <h1>Pesanan Dibatalkan</h1>
+                <p>Pesanan Anda telah dibatalkan. Motor telah dikembalikan ke katalog.</p>
+            </div>
+            
+        {% else %}
+            <div class="success-header">
+                <div class="success-icon" style="background: linear-gradient(135deg, #f44336 0%, #c62828 100%); box-shadow: 0 8px 32px rgba(244, 67, 54, 0.3);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h1>Pembayaran Gagal</h1>
+                <p>Pembayaran Anda gagal diproses. Silakan coba lagi.</p>
+            </div>
+        {% endif %}
+
+        <div class="order-id-box">
+            <div class="label">Order ID</div>
+            <div class="value">{{ transaksi.order_id }}</div>
+        </div>
+
+        <div class="success-card">
+            <div class="success-card-header">
+                <i class="fas fa-motorcycle"></i>
+                <h2>Detail Motor</h2>
+            </div>
+            
+            <div class="motor-summary">
+                {% if transaksi.motor.foto_motor %}
+                    <img src="{{ transaksi.motor.foto_motor }}" alt="{{ transaksi.motor.nama_motor }}">
+                {% else %}
+                    <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&h=400&fit=crop" alt="Motor">
+                {% endif %}
+                <div class="motor-summary-info">
+                    <h3>{{ transaksi.motor.nama_motor }}</h3>
+                    <p><i class="fas fa-cogs"></i> {{ transaksi.motor.cc_motor }}cc • {{ transaksi.motor.transmisi }}</p>
+                    <p><i class="fas fa-tag"></i> Rp {{ "{:,.0f}".format(transaksi.motor.harga_sewa) }}/hari</p>
+                </div>
+            </div>
+        </div>
+        <div class="success-card">
+            <div class="success-card-header">
+                <i class="fas fa-calendar-alt"></i>
+                <h2>Detail Sewa</h2>
+            </div>
+            <div class="success-details">
+                <div class="detail-row">
+                    <div class="detail-label">Tanggal Mulai</div>
+                    <div class="detail-value">{{ transaksi.tgl_sewa.strftime('%d %B %Y') }}</div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Tanggal Selesai</div>
+                    <div class="detail-value">{{ transaksi.tgl_kembali.strftime('%d %B %Y') }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Durasi Sewa</div>
+                    <div class="detail-value">{{ transaksi.total_hari }} hari</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-ticket-alt" style="color: var(--primary);"></i>
+                        Voucher
+                    </div>
+                    <div class="detail-value">
+                        {% if transaksi.id_voucher and transaksi.voucher %}
+                            <span style="background: #fff3e0; color: #ef6c00; padding: 4px 12px; border-radius: 12px; font-weight: 700; font-size: 13px; font-family: 'Courier New', monospace;">
+                                🎟️ {{ transaksi.voucher.kode_voucher }}
+                            </span>
+                        {% else %}
+                            <span style="color: #757575;">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if transaksi.nominal_diskon and transaksi.nominal_diskon > 0 %}
+                <div class="detail-row">
+                    <div class="detail-label">Subtotal</div>
+                    <div class="detail-value" style="text-decoration: line-through; color: #757575;">
+                        Rp {{ "{:,.0f}".format(transaksi.total_harga + transaksi.nominal_diskon) }}
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Diskon</div>
+                    <div class="detail-value" style="color: #00e676; font-weight: 700;">
+                        - Rp {{ "{:,.0f}".format(transaksi.nominal_diskon) }}
+                    </div>
+                </div>
+                {% endif %}
+                <div class="detail-row">
+                    <div class="detail-label">Total Pembayaran</div>
+                    <div class="detail-value highlight">Rp {{ "{:,.0f}".format(transaksi.total_harga) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="success-card">
+            <div class="success-card-header">
+                <i class="fas fa-user"></i>
+                <h2>Detail Penyewa</h2>
+            </div>
+            
+            <div class="success-details">
+                <div class="detail-row">
+                    <div class="detail-label">Nama Lengkap</div>
+                    <div class="detail-value">{{ transaksi.nama_cust }}</div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Email</div>
+                    <div class="detail-value">{{ transaksi.email_cust }}</div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Nomor HP</div>
+                    <div class="detail-value">{{ transaksi.hp_cust }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="success-card">
+            <div class="success-card-header">
+                <i class="fas fa-credit-card"></i>
+                <h2>Detail Pembayaran</h2>
+            </div>
+            <div class="success-details">
+                <div class="detail-row">
+                    <div class="detail-label">Order ID</div>
+                    <div class="detail-value" style="font-family: 'Courier New', monospace;">{{ transaksi.order_id }}</div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Metode Pembayaran</div>
+                    <div class="detail-value">{{ transaksi.payment_method|replace('_', ' ')|title if transaksi.payment_method and transaksi.payment_method != 'pending' else '-' }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Status Pembayaran</div>
+                    <div class="detail-value">
+                        {% if transaksi.status_pembayaran == 'success' %}
+                            <span class="status success">
+                                <i class="fas fa-check-circle"></i> Berhasil
+                            </span>
+                        {% elif transaksi.status_pembayaran == 'pending' %}
+                            <span class="status pending">
+                                <i class="fas fa-clock"></i> Menunggu Pembayaran
+                            </span>
+                        {% elif transaksi.status_pembayaran == 'cancelled' %}
+                            <span class="status failed">
+                                <i class="fas fa-times-circle"></i> Dibatalkan
+                            </span>
+                        {% elif transaksi.status_pembayaran == 'failed' %}
+                            <span class="status failed">
+                                <i class="fas fa-times-circle"></i> Gagal
+                            </span>
+                        {% else %}
+                            <span class="status">
+                                {{ transaksi.status_pembayaran|capitalize }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Status Rental</div>
+                    <div class="detail-value">
+                        {% if transaksi.status_rental == 'Disewa' %}
+                            <span class="status success">
+                                <i class="fas fa-check-circle"></i> Aktif
+                            </span>
+                        {% elif transaksi.status_rental == 'Dibatalkan' %}
+                            <span class="status failed">
+                                <i class="fas fa-times-circle"></i> Dibatalkan
+                            </span>
+                        {% else %}
+                            <span class="status">
+                                {{ transaksi.status_rental }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="success-actions">
+            {% if transaksi.status_pembayaran == 'success' %}
+                <button onclick="window.print()" class="btn print-receipt">
+                    <i class="fas fa-print"></i> Cetak Bukti
+                </button>
+                <a href="/history" class="btn btn-primary">
+                    <i class="fas fa-history"></i> Lihat Riwayat
+                </a>
+                
+            {% elif transaksi.status_pembayaran == 'pending' %}
+                <button onclick="payAgain('{{ transaksi.snap_token }}')" class="btn btn-primary">
+                    <i class="fas fa-credit-card"></i> Lanjutkan Pembayaran
+                </button>
+                <button onclick="cancelTransaction('{{ transaksi.order_id }}')" 
+                        class="btn" 
+                        style="background: #ffebee; color: #c62828; border: 1px solid #ef9a9a;">
+                    <i class="fas fa-times-circle"></i> Batalkan Pesanan
+                </button>
+                <a href="/history" class="btn print-receipt">
+                    <i class="fas fa-history"></i> Riwayat
+                </a>
+                
+            {% elif transaksi.status_pembayaran == 'cancelled' %}
+                <a href="/motors" class="btn btn-primary">
+                    <i class="fas fa-motorcycle"></i> Sewa Motor Lagi
+                </a>
+                <a href="/history" class="btn print-receipt">
+                    <i class="fas fa-history"></i> Lihat Riwayat
+                </a>
+                
+            {% elif transaksi.status_pembayaran == 'failed' %}
+                <a href="/motors" class="btn btn-primary">
+                    <i class="fas fa-motorcycle"></i> Coba Sewa Lagi
+                </a>
+                <a href="/history" class="btn print-receipt">
+                    <i class="fas fa-history"></i> Lihat Riwayat
+                </a>
+            {% else %}
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-home"></i> Kembali ke Beranda
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<script type="text/javascript"
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key="Mid-client-C5W9gfpEaVQ5qJ6f">
+</script>
+
+<script>
+(function() {
+    'use strict';
+    
+    // ========================================
+    // DATA TRANSAKSI
+    // ========================================
+    let transactionData = {
+        orderId: '',
+        createdAt: null,
+        status: ''
+    };
+    
+    // EXPOSE ke window agar bisa dipanggil di bawah
+    window.setTransactionData = function(data) {
+        transactionData = data;
+        console.log('📦 Transaction data loaded:', data);
+        
+        // Auto-init countdown jika status pending
+        if (data.status === 'pending' && data.createdAt) {
+            initCountdownTimer();
+        }
+    };
+    
+    // ========================================
+    // BAYAR ULANG (PAY AGAIN)
+    // ========================================
+    window.payAgain = function(snapToken) {
+        console.log('💳 payAgain called with token:', snapToken);
+        
+        // Cek jika token kosong (misal data lama yang belum punya token)
+        if (!snapToken || snapToken === 'None' || snapToken === '') {
+            alert('❌ Token pembayaran tidak ditemukan. Silakan batalkan pesanan ini dan lakukan pesanan (checkout) ulang.');
+            return;
+        }
+        
+        const btn = event.target.closest('button');
+        if (!btn) return;
+        
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+        
+        // Check Snap.js
+        if (typeof window.snap === 'undefined') {
+            alert('❌ Snap.js belum dimuat. Silakan refresh halaman.');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            return;
+        }
+        
+        // Langsung panggil Snap Midtrans dengan token yang dioper
+        window.snap.pay(snapToken, {
+            onSuccess: function(result) {
+                console.log('✅ Pembayaran berhasil:', result);
+                window.location.reload(); // Reload untuk update status di halaman
+            },
+            onPending: function(result) {
+                console.log('⏳ Menunggu pembayaran:', result);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            },
+            onError: function(result) {
+                console.error('❌ Pembayaran gagal:', result);
+                alert('❌ Pembayaran gagal. Silakan coba lagi.');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            },
+            onClose: function() {
+                console.log('⚠️ User menutup popup pembayaran');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    };
+    
+    // ========================================
+    // CANCEL TRANSACTION - PERMANEN
+    // ========================================
+    window.cancelTransaction = function(orderId) {
+        console.log('🗑️ cancelTransaction called with orderId:', orderId);
+        
+        const confirmed = confirm(
+            '⚠️ PERHATIAN!\n\n' +
+            'Anda akan membatalkan pesanan ini secara PERMANEN.\n\n' +
+            '• Motor akan dikembalikan ke katalog\n' +
+            '• Foto KTP akan dihapus\n' +
+            '• Anda TIDAK bisa membatalkan lagi\n' +
+            '• Anda TIDAK bisa bayar ulang pesanan ini\n\n' +
+            'Untuk sewa motor, Anda harus checkout ulang dari awal.\n\n' +
+            'Yakin ingin melanjutkan?'
+        );
+        
+        if (!confirmed) {
+            console.log('❌ User cancelled');
+            return;
+        }
+        
+        const btn = event.target.closest('button');
+        if (!btn) {
+            console.error('❌ Button not found');
+            return;
+        }
+        
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membatalkan...';
+        
+        fetch(`/api/cancel-transaction/${orderId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📥 Cancel response:', data);
+            
+            if (data.success) {
+                alert(
+                    '✅ Pesanan berhasil dibatalkan secara permanen.\n\n' +
+                    'Silakan checkout ulang jika ingin sewa motor lagi.'
+                );
+                window.location.href = '/motors';
+            } else {
+                alert('❌ Gagal: ' + data.error);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error:', error);
+            alert('❌ Terjadi kesalahan koneksi: ' + error.message);
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    };
+    
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ Payment success page initialized');
+        console.log('🔍 Checking functions availability:');
+        console.log('  - window.payAgain:', typeof window.payAgain);
+        console.log('  - window.cancelTransaction:', typeof window.cancelTransaction);
+        console.log('  - window.setTransactionData:', typeof window.setTransactionData);
+        console.log('  - window.snap:', typeof window.snap);
+    });
+    
+})();
+</script>
+
+<script>
+    window.setTransactionData({
+        orderId: "{{ transaksi.order_id|e }}",
+        createdAt: "{{ transaksi.created_at.strftime('%Y-%m-%d %H:%M:%S') if transaksi.created_at else '' }}",
+        status: "{{ transaksi.status_pembayaran }}"
+    });
+</script>
+{% endblock %}

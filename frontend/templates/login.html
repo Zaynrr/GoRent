@@ -1,0 +1,135 @@
+{% extends 'customers/base.html' %}
+
+{% block title %}Login - GoRent{% endblock %}
+
+{% block content %}
+    <section class="auth-section">
+        <div class="container">
+            <div class="auth-wrapper">
+                
+                <div class="auth-illustration">
+                    <div class="auth-illustration-content">
+                        <i class="fas fa-motorcycle auth-icon"></i>
+                        <h2>Selamat Datang Kembali!</h2>
+                        <p>Masuk ke akun Anda dan nikmati pengalaman sewa motor premium yang tak terlupakan.</p>
+                        <div class="auth-features">
+                            <div class="auth-feature">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Akses cepat ke armada motor</span>
+                            </div>
+                            <div class="auth-feature">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Riwayat pemesanan tersimpan</span>
+                            </div>
+                            <div class="auth-feature">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Promo eksklusif untuk member</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="auth-form-container">
+                    <div class="auth-form-wrapper">
+                        <div class="auth-header">
+                            <h1>Masuk</h1>
+                            <p>Masuk ke akun GoRent Anda</p>
+                        </div>
+
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <form method="POST" action="/login" class="auth-form">
+                            
+                            <div class="form-group">
+                                <label for="username">
+                                    <i class="fas fa-user"></i> Username
+                                </label>
+                                <input type="text" id="username" name="username" placeholder="Masukkan username Anda" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="password">
+                                    <i class="fas fa-lock"></i> Password
+                                </label>
+                                <div class="password-wrapper">
+                                    <input type="password" id="password" name="password" placeholder="Masukkan password" required>
+                                    <button type="button" class="password-toggle" onclick="togglePassword('password', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-auth">
+                                <i class="fas fa-sign-in-alt"></i> Masuk
+                            </button>
+
+                            <div style="text-align: center; margin-top: 20px;">
+                                <a href="/forgot-password" style="color: var(--primary); text-decoration: none; font-size: 14px; font-weight: 600;">
+                                    <i class="fas fa-question-circle"></i> Lupa Password?
+                                </a>
+                            </div>
+
+                            <div class="auth-footer">
+                                <p>Belum punya akun? <a href="/register">Daftar sekarang</a></p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+        // Auto-hide alert setelah 5 detik
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    alert.style.opacity = '0';
+                    alert.style.transition = 'opacity 0.3s ease';
+                    setTimeout(function() {
+                        alert.remove();
+                    }, 300);
+                }, 5000);
+            });
+        });
+
+        // Manual close button
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('btn-close') || e.target.closest('.btn-close')) {
+                const alert = e.target.closest('.alert');
+                if (alert) {
+                    alert.style.opacity = '0';
+                    alert.style.transition = 'opacity 0.3s ease';
+                    setTimeout(function() {
+                        alert.remove();
+                    }, 300);
+                }
+            }
+        });
+    </script>
+{% endblock %}
