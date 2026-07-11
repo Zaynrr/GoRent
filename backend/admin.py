@@ -375,7 +375,7 @@ def admin_transaksi():
     elif filter_type == 'cancelled':
         query = query.filter(Transaksi.status_pembayaran == 'cancelled')
     
-    # Filter berdasarkan id_voucher
+    # Filter berdasarkan voucher
     if voucher_filter == 'with_voucher':
         query = query.filter(Transaksi.id_voucher != None)
     elif voucher_filter == 'without_voucher':
@@ -455,7 +455,14 @@ def admin_transaction_update(id):
                     'error': 'KTP belum diverifikasi! Harap verifikasi KTP terlebih dahulu.'
                 }), 400
         
-        # Update field
+        # Tidak bisa ubah kondisi & denda jika motor masih status disewa
+        if field in ['kondisi_motor', 'denda_kerusakan', 'status_pembayaran_denda']:
+            if transaksi.status_rental == 'Disewa':
+                return jsonify({
+                    'success': False, 
+                    'error': 'Motor masih disewa! Ubah status rental menjadi "Dikembalikan" terlebih dahulu.'
+                }), 400
+
         if field == 'denda_kerusakan':
             transaksi.denda_kerusakan = float(value) if value else 0
         else:
@@ -493,6 +500,7 @@ def admin_transaction_update(id):
             'error': str(e)
         }), 500
 
+# Export PDF
 @admin_bp.route('/transaksi/export-pdf')
 @login_required
 @admin_required 

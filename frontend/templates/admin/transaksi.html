@@ -65,6 +65,15 @@
         </div>
     </div>
     <div class="stat-card">
+        <div class="stat-icon" style="background: #fff3e0; color: #ef6c00;">
+            <i class="fas fa-ticket-alt"></i>
+        </div>
+        <div class="stat-info">
+            <p>Pakai Voucher</p>
+            <h3>{{ with_voucher_count }}</h3>
+        </div>
+    </div>
+    <div class="stat-card">
         <div class="stat-icon orange">
             <i class="fas fa-clock"></i>
         </div>
@@ -243,7 +252,6 @@
                                 {% endif %}
                             </div>
                         {% elif cust.nominal_diskon and cust.nominal_diskon > 0 %}
-                            <!-- Voucher sudah dihapus, tapi diskon masih tercatat -->
                             <div style="display: flex; flex-direction: column; gap: 4px;">
                                 <span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 1px solid #ef9a9a;">
                                     <i class="fas fa-trash"></i> Voucher Dihapus
@@ -284,7 +292,7 @@
                     <td>
                         <select class="admin-select" 
                                 onchange="updateTransaction({{ cust.id_transaksi }}, 'kondisi_motor', this.value); toggleDendaInput({{ cust.id_transaksi }}, this.value)"
-                                {% if cust.status_pembayaran != 'success' or cust.status_pembayaran_denda == 'Lunas' %}disabled{% endif %}
+                                {% if cust.status_rental == 'Disewa' or cust.status_pembayaran != 'success' or cust.status_pembayaran_denda == 'Lunas' %}disabled{% endif %}
                                 style="padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: white; width: 100%; margin-bottom: 6px;">
                             <option value="Tidak Ada Kerusakan" {% if cust.kondisi_motor == 'Tidak Ada Kerusakan' %}selected{% endif %}>
                                 ✅ Tidak ada kerusakan
