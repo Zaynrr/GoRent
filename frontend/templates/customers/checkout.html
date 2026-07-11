@@ -165,8 +165,6 @@
             
             document.getElementById('motorName').textContent = selectedMotor.name;
             document.getElementById('motorImage').src = selectedMotor.image;
-            
-            console.log('✅ Motor data loaded:', selectedMotor.name);
         } else {
             alert('Silakan pilih motor terlebih dahulu!');
             window.location.href = '/motors';
@@ -207,12 +205,12 @@
             const totalPrice = diffDays * motorPricePerDay;
             currentRentalTotal = totalPrice;
             
-            console.log('💰 Harga dihitung:', {
-                hargaPerHari: motorPricePerDay,
-                jumlahHari: diffDays,
-                totalAsli: totalPrice,
-                totalTampil: formatRupiah(totalPrice)
-            });
+            // console.log('💰 Harga dihitung:', {
+            //     hargaPerHari: motorPricePerDay,
+            //     jumlahHari: diffDays,
+            //     totalAsli: totalPrice,
+            //     totalTampil: formatRupiah(totalPrice)
+            // });
             
             document.getElementById('rentalPrice').textContent = formatRupiah(totalPrice);
             document.getElementById('totalPrice').textContent = formatRupiah(totalPrice);
@@ -245,8 +243,8 @@
         
         const currentTotal = currentRentalTotal;
         
-        console.log('🔍 Cek voucher:', code);
-        console.log('💰 Total harga asli:', currentTotal);
+        // console.log('🔍 Cek voucher:', code);
+        // console.log('💰 Total harga asli:', currentTotal);
         
         if (currentTotal <= 0) {
             msg.style.color = '#c62828';
@@ -267,7 +265,7 @@
         .then(data => {
             codeInput.style.borderColor = '';
             
-            console.log('📥 Response dari server:', data);
+            // console.log('📥 Response dari server:', data);
             
             if (data.success) {
                 appliedVoucher = {
@@ -296,7 +294,7 @@
             }
         })
         .catch(error => {
-            console.error('❌ Error:', error);
+            // console.error('❌ Error:', error);
             codeInput.style.borderColor = '';
             msg.style.color = '#c62828';
             msg.textContent = '❌ Terjadi kesalahan koneksi';
@@ -383,7 +381,6 @@
     }
     
     function handleSnapClose(orderId) {
-        console.log("⚠️ User menutup popup pembayaran");
         localStorage.removeItem('selectedMotor');
         window.location.href = `/payment-success?order_id=${orderId}`;
     }
@@ -470,8 +467,6 @@
             }
             
             const orderId = result.order_id;
-            console.log('✅ Transaksi dibuat:', orderId);
-            console.log('💵 Total yang dibayar ke Midtrans:', result.total_price);
 
             btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menunggu pembayaran...';
 
@@ -481,25 +476,19 @@
 
             window.snap.pay(snapToken, {
                 onSuccess: function(result) {
-                    console.log("✅ Pembayaran berhasil:", result);
                     localStorage.removeItem('selectedMotor');
                     window.location.href = `/payment-success?order_id=${result.order_id}`;
                 },
                 onPending: function(result) {
-                    console.log("⏳ Menunggu pembayaran:", result);
                     localStorage.removeItem('selectedMotor');
                     window.location.href = `/payment-success?order_id=${result.order_id}`;
                 },
                 onError: function(result) {
-                    console.log("❌ Pembayaran gagal:", result);
                     alert("❌ Pembayaran gagal. Silakan coba lagi.");
                     btn.disabled = false;
                     btnText.innerHTML = 'Bayar Sekarang';
                 },
                 onClose: function() {
-                    // PERBAIKAN: Customer tetap di halaman checkout saat klik X
-                    console.log("⚠️ User menutup popup pembayaran");
-                    
                     // Ubah teks tombol jadi loading sebentar
                     btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membatalkan sesi...';
                     
@@ -514,7 +503,6 @@
                     })
                     .then(response => response.json())
                     .then(data => {
-                        console.log("✅ Sesi dibersihkan. KTP & Motor di-reset.");
                         btn.disabled = false;
                         btnText.innerHTML = 'Bayar Sekarang';
                     })
@@ -609,8 +597,6 @@
         
         // Load motor data
         loadMotorData();
-        
-        console.log('✅ Checkout page initialized');
     });
 })();
 </script>

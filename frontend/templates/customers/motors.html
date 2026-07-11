@@ -241,7 +241,7 @@
             document.body.style.overflow = '';
         };
 
-        // ===== APPLY FILTERS =====
+        //  APPLY FILTERS 
         window.applyFilters = function() {
             clearAllTimeouts();
 
@@ -325,7 +325,7 @@
             }, 300);
         };
 
-        // ===== CLEAR ALL =====
+        //  CLEAR ALL 
         window.clearAllFilters = function() {
             document.querySelectorAll('input[name="kategori"]').forEach(cb => cb.checked = false);
             document.querySelector('input[name="transmission"][value="all"]').checked = true;
@@ -345,7 +345,7 @@
             if (window.innerWidth <= 1024) closeMobileFilter();
         };
 
-        // ===== MOBILE FILTER =====
+        //  MOBILE FILTER 
         window.toggleMobileFilter = function() {
             const sidebar = document.querySelector('.filter-sidebar');
             sidebar.classList.contains('mobile-active') ? closeMobileFilter() : openMobileFilter();
@@ -373,7 +373,7 @@
             }
         }
 
-        // ===== INISIALISASI =====
+        //  INISIALISASI 
         document.addEventListener('DOMContentLoaded', function() {
 
             // Checkbox kategori
@@ -421,7 +421,6 @@
                 // Perhatikan case-sensitive pada value transmisi (Matic / Manual)
                 const radio = document.querySelector(`input[name="transmission"][value="${transmissionParam}"]`);
                 if (radio) {
-                    // Uncheck opsi "Semua"
                     document.querySelector('input[name="transmission"][value="all"]').checked = false;
                     radio.checked = true;
                 }

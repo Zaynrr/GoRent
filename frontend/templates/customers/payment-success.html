@@ -238,9 +238,9 @@
 
         <div class="success-actions">
             {% if transaksi.status_pembayaran == 'success' %}
-                <button onclick="window.print()" class="btn print-receipt">
+                <!-- <button onclick="window.print()" class="btn print-receipt">
                     <i class="fas fa-print"></i> Cetak Bukti
-                </button>
+                </button> -->
                 <a href="/history" class="btn btn-primary">
                     <i class="fas fa-history"></i> Lihat Riwayat
                 </a>
@@ -290,10 +290,8 @@
 <script>
 (function() {
     'use strict';
-    
-    // ========================================
+
     // DATA TRANSAKSI
-    // ========================================
     let transactionData = {
         orderId: '',
         createdAt: null,
@@ -303,7 +301,7 @@
     // EXPOSE ke window agar bisa dipanggil di bawah
     window.setTransactionData = function(data) {
         transactionData = data;
-        console.log('📦 Transaction data loaded:', data);
+        // console.log('📦 Transaction data loaded:', data);
         
         // Auto-init countdown jika status pending
         if (data.status === 'pending' && data.createdAt) {
@@ -311,11 +309,9 @@
         }
     };
     
-    // ========================================
-    // BAYAR ULANG (PAY AGAIN)
-    // ========================================
+    // BAYAR ULANG
     window.payAgain = function(snapToken) {
-        console.log('💳 payAgain called with token:', snapToken);
+        // console.log('💳 payAgain called with token:', snapToken);
         
         // Cek jika token kosong (misal data lama yang belum punya token)
         if (!snapToken || snapToken === 'None' || snapToken === '') {
@@ -341,33 +337,31 @@
         // Langsung panggil Snap Midtrans dengan token yang dioper
         window.snap.pay(snapToken, {
             onSuccess: function(result) {
-                console.log('✅ Pembayaran berhasil:', result);
-                window.location.reload(); // Reload untuk update status di halaman
+                // console.log('✅ Pembayaran berhasil:', result);
+                window.location.reload(); 
             },
             onPending: function(result) {
-                console.log('⏳ Menunggu pembayaran:', result);
+                //console.log('⏳ Menunggu pembayaran:', result);
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             },
             onError: function(result) {
-                console.error('❌ Pembayaran gagal:', result);
+                // console.error('❌ Pembayaran gagal:', result);
                 alert('❌ Pembayaran gagal. Silakan coba lagi.');
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             },
             onClose: function() {
-                console.log('⚠️ User menutup popup pembayaran');
+                // console.log('⚠️ User menutup popup pembayaran');
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }
         });
     };
     
-    // ========================================
-    // CANCEL TRANSACTION - PERMANEN
-    // ========================================
+    // BATALKAN TRANSAKSI
     window.cancelTransaction = function(orderId) {
-        console.log('🗑️ cancelTransaction called with orderId:', orderId);
+        // console.log('🗑️ cancelTransaction called with orderId:', orderId);
         
         const confirmed = confirm(
             '⚠️ PERHATIAN!\n\n' +
@@ -406,7 +400,7 @@
             return response.json();
         })
         .then(data => {
-            console.log('📥 Cancel response:', data);
+            //console.log('📥 Cancel response:', data);
             
             if (data.success) {
                 alert(
@@ -428,17 +422,15 @@
         });
     };
     
-    // ========================================
     // INITIALIZATION
-    // ========================================
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('✅ Payment success page initialized');
-        console.log('🔍 Checking functions availability:');
-        console.log('  - window.payAgain:', typeof window.payAgain);
-        console.log('  - window.cancelTransaction:', typeof window.cancelTransaction);
-        console.log('  - window.setTransactionData:', typeof window.setTransactionData);
-        console.log('  - window.snap:', typeof window.snap);
-    });
+    // document.addEventListener('DOMContentLoaded', function() {
+    //     console.log('✅ Payment success page initialized');
+    //     console.log('🔍 Checking functions availability:');
+    //     console.log('  - window.payAgain:', typeof window.payAgain);
+    //     console.log('  - window.cancelTransaction:', typeof window.cancelTransaction);
+    //     console.log('  - window.setTransactionData:', typeof window.setTransactionData);
+    //     console.log('  - window.snap:', typeof window.snap);
+    // });
     
 })();
 </script>

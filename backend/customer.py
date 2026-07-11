@@ -31,7 +31,6 @@ def checkout():
 @customer_bp.route('/history')
 @login_required
 def history():
-    # Query dengan joinedload untuk relasi voucher & motor
     transaksi = Transaksi.query.options(
         db.joinedload(Transaksi.voucher),
         db.joinedload(Transaksi.motor)
@@ -45,7 +44,7 @@ def history():
         if t.status_pembayaran == 'success':
             total_pengeluaran += t.total_harga
     
-    # Attach customer data
+    # customer data
     for t in transaksi:
         t.customer = db.session.get(User, t.id_customer)
     
@@ -62,14 +61,13 @@ def payment_success():
         flash('Order ID tidak ditemukan', 'danger')
         return redirect(url_for('index'))
     
-    # Query transaksi dari database
     transaksi = Transaksi.query.filter_by(order_id=order_id).first()
     
     if not transaksi:
         flash('Transaksi tidak ditemukan', 'danger')
         return redirect(url_for('customer.index'))
     
-    # Validasi: hanya user yang bersangkutan yang bisa lihat
+    # hanya user yang bersangkutan yang bisa lihat
     if transaksi.id_customer != session['user_id']:
         flash('Akses ditolak', 'danger')
         return redirect(url_for('customer.index'))

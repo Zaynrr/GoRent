@@ -16,20 +16,19 @@ def register():
         no_hp = request.form.get('no_hp').strip()
         password = request.form.get('password').strip()
         
-        # 1. Cek apakah Email sudah terdaftar
+        # Cek apakah Email sudah terdaftar
         email_exist = User.query.filter_by(email=email).first()
         if email_exist:
             flash('Email sudah terdaftar! Silakan gunakan email lain atau langsung login.', 'danger')
             return redirect(url_for('auth.register'))
             
-        # 2. Cek apakah Username (nama) sudah terdaftar
+        # Cek apakah Username sudah terdaftar
         username_exist = User.query.filter_by(nama=nama).first()
         if username_exist:
             flash('Username sudah digunakan! Silakan pilih username yang lain.', 'danger')
             return redirect(url_for('auth.register'))
         
         try:
-            # Generate password hash
             password_hash = generate_password_hash(password)
         
             # Buat user baru
@@ -49,7 +48,6 @@ def register():
         except Exception as e:
             db.session.rollback()
             flash('Terjadi kesalahan sistem saat membuat akun. Silakan coba lagi.', 'danger')
-            print(f"Error Register: {str(e)}") # Untuk mempermudah proses debugging di terminal
             return redirect(url_for('auth.register'))
         
     return render_template('register.html')
@@ -72,19 +70,16 @@ def login():
 
         # Cek apakah user ada dan password cocok
         if user and check_password_hash(user.password_hash, password):
-            # Cek status aktif akun
             if not user.is_active:
                 flash('Akun Anda telah dinonaktifkan. Hubungi admin untuk informasi lebih lanjut.', 'danger')
                 return redirect(url_for('auth.login'))
 
-            # Set session jika login sukses
             session['user_id'] = user.id
             session['user_role'] = user.role
             session['user_name'] = user.nama
             session['password_hash'] = user.password_hash
             flash(f'Selamat datang, {user.nama}!', 'success')
             
-            # Redirect berdasarkan role
             if user.role == 'admin':
                 return redirect(url_for('admin.admin_dashboard'))
             else:
@@ -108,15 +103,12 @@ def forgot_password():
         # Cari user by email
         user = User.query.filter_by(email=email).first()
         
-        # SELALU tampilkan pesan sukses (security best practice)
         success_message = 'Jika email terdaftar di sistem kami, link reset password telah dikirim. Silakan cek inbox Anda.'
         
         if user:
-            # Generate token reset
             token = secrets.token_urlsafe(32)
-            expiry = datetime.now() + timedelta(hours=1)  # Berlaku 1 jam
+            expiry = datetime.now() + timedelta(hours=1)  
             
-            # Simpan token di database
             user.reset_token = token
             user.reset_token_expiry = expiry
             db.session.commit()
@@ -125,11 +117,6 @@ def forgot_password():
             reset_url = url_for('auth.reset_password', token=token, _external=True)
             
             email_success, email_result = send_reset_password_email(user, reset_url)
-            
-            if email_success:
-                print(f"✅ Reset password email sent to: {email}")
-            else:
-                print(f"❌ Failed to send reset email: {email_result}")
         
         flash(success_message, 'success')
         return redirect(url_for('auth.login'))
@@ -158,7 +145,6 @@ def reset_password(token):
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
         
-        # Validasi
         if not password or not confirm_password:
             flash('Password wajib diisi', 'danger')
             return render_template('reset-password.html', token=token, user=user)
@@ -171,7 +157,6 @@ def reset_password(token):
             flash('Password minimal 6 karakter', 'danger')
             return render_template('reset-password.html', token=token, user=user)
         
-        # Cek password lama
         if check_password_hash(user.password_hash, password):
             flash('Password baru tidak boleh sama dengan password saat ini!', 'danger')
             return render_template('reset-password.html', token=token, user=user)

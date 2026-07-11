@@ -86,8 +86,9 @@ class Transaksi(db.Model):
     created_at = db.Column(db.DateTime, nullable=True, default=datetime.now())
     snap_token = db.Column(db.String(255), nullable=True)
     waktu_expired = db.Column(db.DateTime, nullable=True)
-    voucher = db.relationship('Voucher', backref='transaksis', lazy=True)
     status_pembayaran_denda = db.Column(db.String(20), default='Tidak Ada Denda')
+    
+    voucher = db.relationship('Voucher', backref='transaksis', lazy=True)
 
     def __repr__(self):
         return f'<Transaksi {self.order_id}>'

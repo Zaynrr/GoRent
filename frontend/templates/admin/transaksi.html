@@ -543,7 +543,7 @@
 
 {% block extra_js %}
 <script>
-    // ===== FUNGSI BARU: EXPORT PDF DENGAN FILTER TANGGAL =====
+    // ===== Export pdf sesuai hari =====
     function exportPDF(status = 'all') {
         const days = document.getElementById('pdfDateFilter').value;
         let url = `{{ url_for('admin.export_transaksi_pdf') }}?days=${days}`;
@@ -582,14 +582,12 @@
         });
     }
     
-    // ===== APPLY FILTER (REDIRECT DENGAN URL PARAMETER) =====
+    // ===== APPLY FILTER =====
     function applyFilter(filterType) {
-        // Redirect ke URL dengan parameter filter
-        // Reset ke page 1 saat filter berubah
         window.location.href = `{{ url_for('admin.admin_transaksi') }}?filter=${filterType}&page=1`;
     }
 
-    // ===== SEARCH TABLE (Client-side only) =====
+    // ===== SEARCH TABLE  =====
     function searchTable() {
         const input = document.getElementById('searchInput').value.toLowerCase();
         const rows = document.querySelectorAll('#transactionTable tbody tr');
@@ -606,13 +604,12 @@
         });
     }
     
-    // ===== FUNGSI BARU: VALIDASI STATUS RENTAL (POP-UP KTP) =====
+    // ===== VALIDASI STATUS RENTAL (POP-UP KTP) =====
     function handleRentalChange(transactionId, selectElement, ktpStatus) {
         const newValue = selectElement.value;
         const oldValue = newValue === 'Dikembalikan' ? 'Disewa' : 'Dikembalikan';
 
         if (newValue === 'Dikembalikan') {
-            // Validasi KTP: Jika belum di verifikasi, tolak perubahan!
             if (ktpStatus !== 'Verified') {
                 alert('⚠️ KTP BELUM DIVERIFIKASI!\n\nTidak dapat mengubah status menjadi Dikembalikan. Silakan verifikasi KTP customer ini terlebih dahulu.');
                 selectElement.value = oldValue; // Kembalikan ke pilihan 'Disewa'
@@ -626,7 +623,6 @@
             }
         }
 
-        // Lanjut panggil fungsi updateTransaction jika semuanya aman
         updateTransaction(transactionId, 'status_rental', newValue);
     }
 

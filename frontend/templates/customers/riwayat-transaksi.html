@@ -271,14 +271,6 @@
                 </div>
                 {% endfor %}
             </div>
-            
-            <!-- PAGE INDICATOR DOTS
-            <div class="page-indicator" id="pageIndicator">
-                {% for t in transactions %}
-                <div class="page-dot {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}"></div>
-                {% endfor %}
-            </div> -->
-            
         {% else %}
             <!-- Empty State -->
             <div style="text-align: center; padding: 80px 20px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color);">
@@ -305,7 +297,6 @@
          style="max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; text-align: left;" 
          onclick="event.stopPropagation()">
         
-        <!-- HEADER (FIXED DI ATAS) -->
         <div style="text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); flex-shrink: 0;">
             <div class="motor-popup-icon rented" style="margin: 0 auto 16px;">
                 <i class="fas fa-receipt"></i>
@@ -314,12 +305,9 @@
             <p style="color: var(--text-muted); font-size: 14px; margin: 0;">Informasi lengkap pemesanan kamu</p>
         </div>
         
-        <!-- CONTENT (SCROLLABLE DI TENGAH) -->
         <div id="detailContent" style="flex: 1; overflow-y: auto; padding-right: 8px; margin-right: -8px;">
-            <!-- Konten akan diisi oleh JavaScript -->
         </div>
         
-        <!-- FOOTER (FIXED DI BAWAH) -->
         <div style="text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color); flex-shrink: 0;">
             <button class="btn btn-primary" onclick="closeDetailModal()">
                 <i class="fas fa-times"></i> Tutup
@@ -490,9 +478,7 @@
         }
     });
 
-    // ========================================
-    // BAYAR ULANG DARI RIWAYAT
-    // ========================================
+    // Bayar ulang dari riwayat transaksi
     function payAgain(snapToken) {
         // Cek jika token kosong/None
         if (!snapToken || snapToken === 'None' || snapToken === '') {
@@ -516,11 +502,11 @@
         // Buka langsung popup Snap pakai token dari database
         window.snap.pay(snapToken, {
             onSuccess: function(result) {
-                console.log('✅ Pembayaran berhasil');
+                //console.log('✅ Pembayaran berhasil');
                 window.location.href = `/payment-success?order_id=${result.order_id}`;
             },
             onPending: function(result) {
-                console.log('⏳ Menunggu pembayaran');
+                //console.log('⏳ Menunggu pembayaran');
                 window.location.href = `/payment-success?order_id=${result.order_id}`;
             },
             onError: function(result) {
@@ -529,16 +515,15 @@
                 btn.innerHTML = originalText;
             },
             onClose: function() {
-                console.log('⚠️ User menutup popup');
+                //console.log('⚠️ User menutup popup');
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }
         });
     }
     
-    // ========================================
-    // CANCEL TRANSACTION - PERMANEN (dari riwayat)
-    // ========================================
+
+    // Cancel transaksi dari riwayat transaksi
     function cancelTransaction(orderId) {
         if (!confirm('⚠️ PERHATIAN!\n\n' +
                     'Batalkan pesanan ini secara PERMANEN?\n\n' +
@@ -576,9 +561,7 @@
             btn.innerHTML = originalText;
         });
 
-        // ========================================
-        // PAGE INDICATOR (Mobile Swipe)
-        // ========================================
+        // Indikator halaman  (Mobile Swipe)
         (function() {
             const container = document.getElementById('historyCards');
             const indicator = document.getElementById('pageIndicator');
@@ -604,17 +587,6 @@
                     }
                 });
             });
-            
-            // // Klik dot untuk scroll ke card
-            // dots.forEach((dot, index) => {
-            //     dot.addEventListener('click', function() {
-            //         const cardWidth = cards[0].offsetWidth + 16;
-            //         container.scrollTo({
-            //             left: cardWidth * index,
-            //             behavior: 'smooth'
-            //         });
-            //     });
-            // });
             
             // Sembunyikan swipe hint setelah 5 detik
             const swipeHint = document.querySelector('.swipe-hint');

@@ -1,4 +1,4 @@
-from flask import Blueprint, app, app, request, jsonify, session
+from flask import Blueprint, app, app, flash, request, jsonify, session
 from backend.model import db, Motor, Transaksi, Voucher
 from backend.helper import login_required, allowed_file, upload_ktp_to_cloudinary, delete_from_cloudinary, extract_public_id_from_url, send_invoice_email, send_invoice_whatsapp
 import requests, base64, hashlib, random
@@ -46,7 +46,7 @@ def upload_ktp():
                 'error': 'Ukuran file terlalu besar. Maksimal 5MB'
             }), 400
         
-        if file_size < 10 * 1024:  # Min 10KB (pasti bukan file kosong/corrupt)
+        if file_size < 10 * 1024: 
             return jsonify({
                 'success': False,
                 'error': 'File terlalu kecil, kemungkinan corrupt'
@@ -112,7 +112,7 @@ def payment():
         email_cust = data.get('email', '')
         hp_cust = data.get('phone', '')
         
-        # VALIDASI VOUCHER (input dari user tetap pakai kode)
+        # Validasi voucher
         kode_voucher_input = data.get('voucher_code', '').upper().strip() if data.get('voucher_code') else None
         nominal_diskon = 0
         final_price = base_price
@@ -127,7 +127,6 @@ def payment():
                     voucher.total_pakai < voucher.kuota and 
                     base_price >= voucher.min_belanja):
                     
-                    # Hitung diskon
                     if voucher.tipe_diskon == 'percent':
                         nominal_diskon = (voucher.nilai_diskon / 100) * base_price
                         if voucher.max_diskon and nominal_diskon > voucher.max_diskon:
@@ -140,11 +139,9 @@ def payment():
                         
                     final_price = base_price - int(nominal_diskon)
                     
-                    # Simpan ID voucher saja (TIDAK simpan kode)
                     id_voucher = voucher.id
                     
                     voucher.total_pakai += 1
-                    print(f"✅ Voucher {voucher.kode_voucher} (ID: {voucher.id}) digunakan. Diskon: Rp {nominal_diskon:,}")
                 else:
                     print(f"⚠️ Voucher {kode_voucher_input} tidak valid, bayar harga normal")
     
@@ -186,11 +183,6 @@ def payment():
         
         db.session.add(transaksi_baru)
         db.session.commit()
-        
-        print(f"✅ Transaksi dibuat: {order_id}")
-        print(f"💰 Base: Rp {base_price:,} | Diskon: Rp {nominal_diskon:,} | Final: Rp {final_price:,}")
-        if id_voucher:
-            print(f"🎟️ Voucher ID: {id_voucher}")
         
         # Call Midtrans API
         encoded_key = base64.b64encode(f"{Config.SERVER_KEY}:".encode()).decode()
@@ -247,7 +239,6 @@ def payment():
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Server Error: {str(e)}")
         return jsonify({'error': f'Terjadi kesalahan: {str(e)}'}), 500
 
 # Midtrans Webhook
@@ -262,30 +253,11 @@ def midtrans_notification():
         fraud_status = data.get('fraud_status')
         status_code = data.get('status_code')
         gross_amount = data.get('gross_amount')
-        signature_key = data.get('signature_key')
         
         cust_detail = data.get('customer_details', {})
         cust_email = cust_detail.get('email', '')
         
         expiry_time = data.get('expiry_time')
-        
-        # print("\n" + "="*80)
-        # print("🔔 MIDTRANS NOTIFICATION RECEIVED!")
-        # print(f"Order ID: {id_order}")
-        # print(f"Status: {status_transaksi}")
-        # print(f"Email: {cust_email}")
-        # print("="*80 + "\n")
-        
-        # ===== VERIFIKASI SIGNATURE =====
-        # expected_signature = hashlib.sha512(
-        #     f"{id_order}{status_code}{gross_amount}{Config.SERVER_KEY}".encode()
-        # ).hexdigest()
-        
-        # if expected_signature != signature_key:
-        #     print("❌ INVALID SIGNATURE!")
-        #     return jsonify({'status': 'error', 'message': 'Invalid signature'}), 403
-        
-        # print("✅ Signature valid!")
         
         transaksi = Transaksi.query.options(
             db.joinedload(Transaksi.voucher),  
@@ -296,20 +268,17 @@ def midtrans_notification():
         ).order_by(Transaksi.id_transaksi.desc()).first()
         
         if not transaksi:
-            print(f"⚠️ Transaksi {id_order} TIDAK DITEMUKAN di database")
             return jsonify({
                 'status': 'success',
-                'message': 'Transaction not found in database, but acknowledged'
+                'message': 'Transaksi tidak ada didatabase'
             }), 200
 
         # Skip jika sudah dibatalkan customer
         if transaksi.status_pembayaran == 'cancelled':
-            print(f"⚠️ Transaksi {id_order} sudah dibatalkan customer, skip webhook")
             return jsonify({'status': 'success'}), 200
         
         # IDEMPOTENCY CHECK
         if status_transaksi in ['settlement', 'capture'] and transaksi.status_pembayaran == 'success':
-            print(f"⚠️ Transaksi {id_order} sudah success, skip processing")
             return jsonify({'status': 'success'}), 200
 
         if expiry_time:
@@ -318,7 +287,7 @@ def midtrans_notification():
                 clean_expiry = expiry_time.split(' +')[0].split(' -')[0]
                 transaksi.waktu_expired = datetime.strptime(clean_expiry, '%Y-%m-%d %H:%M:%S')
             except ValueError as ve:
-                print(f"⚠️ Format string waktu expired tidak sesuai: {ve}")
+                flash(f"⚠️ Format string waktu expired tidak sesuai: {ve}", 'warning')
         
         # Process berdasarkan status
         if status_transaksi == 'capture':
@@ -336,22 +305,19 @@ def midtrans_notification():
             transaksi.status_pembayaran = 'failed'
             transaksi.status_rental = 'Dikembalikan'
             
-            # 1. Kembalikan status Motor ke 'Tersedia'
+            # Motor ke Tersedia
             motor = db.session.get(Motor, transaksi.id_motor)
             if motor:
                 motor.status_motor = 'Tersedia'
-                print(f"✅ Motor {motor.nama_motor} dikembalikan ke Tersedia")
                 
-            # 2. Reset / Kembalikan Kuota Voucher
+            # Kembalikan Kuota Voucher
             if transaksi.id_voucher:
                 voucher = db.session.get(Voucher, transaksi.id_voucher)
                 if voucher and voucher.total_pakai > 0:
                     voucher.total_pakai -= 1
-                    print(f"🔄 Kuota voucher (ID: {voucher.id}) berhasil dikembalikan.")
             
-            # 3. Hapus foto KTP dari Cloudinary & kosongkan dari Database
+            # Hapus foto KTP dari Cloudinary & kosongkan dari Database
             if transaksi.KTP:
-                print(f"🗑️ Menghapus KTP dari Cloudinary untuk Order ID: {id_order}")
                 delete_from_cloudinary(transaksi.KTP)
                 transaksi.KTP = '-' 
                 transaksi.status_verifikasi_ktp = 'Belum Diverifikasi'
@@ -372,16 +338,11 @@ def midtrans_notification():
         
         db.session.commit()
         
-        # KIRIM INVOICE JIKA SUCCESS
+        # Kirim invoice jika success
         if transaksi.status_pembayaran == 'success':
-            print(f"📧 Sending invoice for {id_order}")
-            
             # Kirim Email
             if cust_email:
                 email_success, email_result = send_invoice_email(transaksi, cust_email)
-                print(f"📧 Email: {'✅' if email_success else '❌'} - {email_result}")
-            else:
-                print(f"⚠️ Email customer kosong, skip email invoice")
             
             # Ambil nomor HP
             cust_hp = transaksi.hp_cust
@@ -391,20 +352,12 @@ def midtrans_notification():
             # Kirim WhatsApp
             if cust_hp:
                 wa_success, wa_result = send_invoice_whatsapp(transaksi, cust_hp)
-                print(f"📱 WA: {'✅' if wa_success else '❌'} - {wa_result}")
-            else:
-                print(f"⚠️ HP customer kosong, skip WA invoice")
-        
-        print(f"✅ Transaksi {id_order} berhasil diupdate!")
-        print(f"Status Pembayaran: {transaksi.status_pembayaran}")
-        print(f"Payment Method: {transaksi.payment_method}")
-        print("="*80 + "\n")
-        
+                
         return jsonify({'status': 'success'}), 200
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error: {str(e)}")
+        flash(f"❌ Error: {str(e)}", 'danger')
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -433,7 +386,7 @@ def cancel_transaction(order_id):
                 'error': 'Transaksi tidak bisa dibatalkan'
             }), 400
         
-        # KEMBALIKAN KUOTA VOUCHER (pakai id_voucher)
+        # Kembalikan kouota voucher
         voucher_info = None
         
         if transaksi.id_voucher:
@@ -449,33 +402,29 @@ def cancel_transaction(order_id):
                     'total_pakai_baru': voucher.total_pakai
                 }
                 
-                print(f"🎟️ Voucher dikembalikan: {voucher.kode_voucher} (ID: {voucher.id})")
         
-        # HAPUS FOTO KTP
+        # Hapus ktp
         if transaksi.KTP:
             try:
                 public_id = extract_public_id_from_url(transaksi.KTP)
                 if public_id:
                     delete_from_cloudinary(public_id)
-                    print(f"✅ Foto KTP dihapus: {public_id}")
             except Exception as e:
-                print(f"⚠️ Error hapus KTP: {str(e)}")
+                flash(f"⚠️ Error hapus KTP: {str(e)}", 'warning')
             
             transaksi.KTP = '-'
             transaksi.status_verifikasi_ktp = 'Belum Diverifikasi'
         
-        # STATUS FINAL
         transaksi.status_pembayaran = 'cancelled'
         transaksi.status_rental = 'Dikembalikan'
         
-        # KEMBALIKAN MOTOR
         motor = db.session.get(Motor, transaksi.id_motor)
         if motor:
             motor.status_motor = 'Tersedia'
         
         db.session.commit()
         
-        # CANCEL DI MIDTRANS
+        # Cancel di Midtrans
         try:
             encoded_key = base64.b64encode(f"{Config.SERVER_KEY}:".encode()).decode()
             headers = {
@@ -485,9 +434,8 @@ def cancel_transaction(order_id):
             }
             cancel_url = f"https://api.sandbox.midtrans.com/v2/{transaksi.order_id}/cancel"
             requests.post(cancel_url, headers=headers, timeout=10)
-            print(f"✅ Cancelled di Midtrans: {transaksi.order_id}")
         except Exception as e:
-            print(f"⚠️ Gagal cancel di Midtrans: {str(e)}")
+            flash(f"⚠️ Gagal cancel di Midtrans: {str(e)}", 'warning')
         
         response_data = {
             'success': True,
@@ -502,7 +450,6 @@ def cancel_transaction(order_id):
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error cancel: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # Api cek ketersediaan motor
@@ -531,7 +478,7 @@ def check_motor_availability():
             'reason': f'Motor ini sudah {motor.status_motor.lower()}. Silakan pilih motor lain.'
         })
     
-    # CHECK APAKAH ADA TRANSAKSI PENDING UNTUK MOTOR INI
+    # Cek apakah motor sudah dipesan
     transaksi_pending = Transaksi.query.filter_by(
         id_motor=motor.id_motor,
         status_pembayaran='pending',
@@ -560,7 +507,7 @@ def check_voucher():
         if not code:
             return jsonify({'success': False, 'error': 'Kode voucher kosong'}), 400
         
-        # Cari voucher by kode (input dari user)
+        # Cek voucher
         voucher = Voucher.query.filter_by(kode_voucher=code, is_active=True).first()
         
         if not voucher:
@@ -602,5 +549,4 @@ def check_voucher():
         })
         
     except Exception as e:
-        print(f"❌ Error check voucher: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500

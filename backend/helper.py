@@ -16,9 +16,6 @@ cloudinary.config(
     secure=True
 )
 
-# ==========================================
-# HELPER FUNCTIONS - CLOUDINARY
-# ==========================================
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
     if not filename or '.' not in filename:
@@ -68,14 +65,12 @@ def upload_ktp_to_cloudinary(file, user_id):
             resource_type="image"
         )
         
-        print(f"KTP berhasil diupload: {upload_result['secure_url']}")
-        
         return {
             'url': upload_result['secure_url'],
             'public_id': upload_result['public_id']
         }
     except Exception as e:
-        print(f"Error upload KTP ke Cloudinary: {str(e)}")
+        flash(f"Error upload KTP ke Cloudinary: {str(e)}", 'danger')
         return None
 
 def delete_from_cloudinary(public_id):
@@ -83,7 +78,7 @@ def delete_from_cloudinary(public_id):
         cloudinary.uploader.destroy(public_id)
         return True
     except Exception as e:
-        print(f"Error delete Cloudinary: {str(e)}")
+        flash(f"Error delete Cloudinary: {str(e)}", 'danger')
         return False
 
 
@@ -103,7 +98,7 @@ def extract_public_id_from_url(url):
         
         return '/'.join(public_id_parts)
     except Exception as e:
-        print(f"Warning: Gagal extract public_id: {e}")
+        flash(f"Warning: Gagal extract public_id: {e}", 'warning')
         return None
 
 # Kirim WA Otomatis
@@ -111,40 +106,36 @@ def send_invoice_whatsapp(transaksi, hp_cust):
     api_key = Config.FONNTE_API_KEY
     
     if not api_key:
-        print('[ERROR] FONNTE_API_KEY belum diatur di .env')
+        # print('[ERROR] FONNTE_API_KEY belum diatur di .env')
         return False, 'API key not configured'
     
     if not hp_cust:
-        print('[ERROR] Nomor HP customer kosong')
+        # print('[ERROR] Nomor HP customer kosong')
         return False, 'Customer phone is empty'
     
     try:
-        # AMBIL DATA DENGAN SAFE ACCESS
         tgl_sewa = transaksi.tgl_sewa.strftime('%d %B %Y') if transaksi.tgl_sewa else '-'
         tgl_kembali = transaksi.tgl_kembali.strftime('%d %B %Y') if transaksi.tgl_kembali else '-'
         total_harga = f"Rp {transaksi.total_harga:,.0f}".replace(',', '.')
         nama_motor = transaksi.motor.nama_motor if transaksi.motor else 'Motor'
         nama_cust = transaksi.nama_cust or 'Customer'
         
-        # AMBIL KODE VOUCHER DARI RELASI (SAFE)
         kode_voucher = None
         if transaksi.voucher:
             kode_voucher = transaksi.voucher.kode_voucher
         
         nominal_diskon = transaksi.nominal_diskon or 0
         
-        # PENGKONDISIAN YANG AMAN
         if nominal_diskon > 0:
             harga_asli = transaksi.total_harga + nominal_diskon
             
             if kode_voucher:
-                # Voucher masih ada di database
                 payment_section = f"""💰 *Pembayaran:*
 • Subtotal: Rp {harga_asli:,.0f}
 • Voucher: {kode_voucher} (- Rp {nominal_diskon:,.0f})
 • *Total: {total_harga}*"""
             else:
-                # Voucher sudah dihapus admin, tapi diskon masih tercatat
+
                 payment_section = f"""💰 *Pembayaran:*
 • Subtotal: Rp {harga_asli:,.0f}
 • Diskon Promo: - Rp {nominal_diskon:,.0f}
@@ -207,7 +198,7 @@ Selamat berkendara! 🏍️"""
             return False, reason
             
     except Exception as e:
-        print(f"❌ WhatsApp error: {str(e)}")
+        # print(f"❌ WhatsApp error: {str(e)}")
         import traceback
         traceback.print_exc()
         return False, str(e)
@@ -227,14 +218,12 @@ def send_invoice_email(transaksi, cust_email):
     try:
         resend.api_key = api_key
         
-        # AMBIL DATA DENGAN SAFE ACCESS
         nama_cust = transaksi.nama_cust or 'Customer'
         nama_motor = transaksi.motor.nama_motor if transaksi.motor else 'Motor'
         tgl_sewa = transaksi.tgl_sewa.strftime('%d %B %Y') if transaksi.tgl_sewa else '-'
         tgl_kembali = transaksi.tgl_kembali.strftime('%d %B %Y') if transaksi.tgl_kembali else '-'
         total_hari = transaksi.total_hari or 0
         
-        # AMBIL KODE VOUCHER DARI RELASI (SAFE)
         kode_voucher = None
         if transaksi.voucher:
             kode_voucher = transaksi.voucher.kode_voucher
@@ -243,13 +232,10 @@ def send_invoice_email(transaksi, cust_email):
         harga_final = transaksi.total_harga
         harga_asli = harga_final + nominal_diskon
         
-        # TAMPILAN VOUCHER YANG FLEKSIBEL
         if nominal_diskon > 0:
             if kode_voucher:
-                # Voucher masih ada di database
                 voucher_display = f'<span style="background: #fff3e0; color: #ef6c00; padding: 4px 10px; border-radius: 12px; font-weight: 700;">🎟️ {kode_voucher}</span>'
             else:
-                # Voucher sudah dihapus admin
                 voucher_display = '<span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 12px;">🗑️ Voucher Dihapus</span>'
             
             diskon_display = f'<span style="color: #00e676; font-weight: 700;">- Rp {nominal_diskon:,.0f}</span>'
@@ -368,14 +354,13 @@ def send_invoice_email(transaksi, cust_email):
         # Kirim email
         email = resend.Emails.send(params)
         
-        print(f"✅ Email sent via Resend: {email.get('id')}")
         return True, email.get('id')
         
     except resend.exceptions.ResendError as e:
-        print(f"❌ Resend API Error: {str(e)}")
+        # print(f"❌ Resend API Error: {str(e)}")
         return False, str(e)
     except Exception as e:
-        print(f"❌ Failed to send email: {str(e)}")
+        # print(f"❌ Failed to send email: {str(e)}")
         import traceback
         traceback.print_exc()
         return False, str(e)
@@ -450,14 +435,14 @@ def send_reset_password_email(user, reset_url):
         }
         
         email = resend.Emails.send(params)
-        print(f"✅ Reset password email sent: {email.get('id')}")
+        # print(f"✅ Reset password email sent: {email.get('id')}")
         return True, email.get('id')
         
     except resend.exceptions.ResendError as e:
-        print(f"❌ Resend API Error: {str(e)}")
+        # print(f"❌ Resend API Error: {str(e)}")
         return False, str(e)
     except Exception as e:
-        print(f"❌ Failed to send reset email: {str(e)}")
+        # print(f"❌ Failed to send reset email: {str(e)}")
         return False, str(e)
 
 def login_required(f):
@@ -471,7 +456,7 @@ def login_required(f):
         
         # Untuk mmengatasi akun non aktif
         if user and not user.is_active:
-            session.clear() # Hapus semua session (Otomatis Logout)
+            session.clear() 
             flash('Sesi Anda telah berakhir karena akun dinonaktifkan oleh Admin.', 'danger')
             return redirect(url_for('auth.login'))
         

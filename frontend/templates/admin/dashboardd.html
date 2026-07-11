@@ -210,14 +210,13 @@
         }
     };
 
-    // Initialize chart
+    // chart
     let incomeChart = new Chart(document.getElementById('incomeChart'), chartConfig);
 
-    // Update chart based on filter
+    // Update chart 
     function updateChart() {
         const filter = document.getElementById('timeFilter').value;
         
-        // Fetch new data based on filter
         fetch(`/admin/dashboard/chart-data?days=${filter}`)
             .then(response => response.json())
             .then(data => {

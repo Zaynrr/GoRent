@@ -25,20 +25,20 @@ def admin_dashboard():
     
     total_transaksi = Transaksi.query.count()
     
-    # PERBAIKAN: Pendapatan harian dihitung dari 'created_at' bukan 'tgl_sewa'
+    # Pendapatan harian
     pendapatan_harian = db.session.query(func.sum(Transaksi.total_harga)).filter(
         func.date(Transaksi.created_at) == today,
         Transaksi.status_pembayaran == 'success'
     ).scalar() or 0
     
-    # PERBAIKAN: Pendapatan Bulanan dihitung dari 'created_at'
+    # Pendapatan Bulanan 
     pendapatan_bulanan = db.session.query(func.sum(Transaksi.total_harga)).filter(
         extract('month', Transaksi.created_at) == today.month,
         extract('year', Transaksi.created_at) == today.year,
         Transaksi.status_pembayaran == 'success'  
     ).scalar() or 0
     
-    # Data untuk grafik (Last 30 Days) - HANYA SUCCESS
+    # Data untuk grafik 
     chart_labels = []
     chart_data = []
 
@@ -46,7 +46,6 @@ def admin_dashboard():
         date = today - timedelta(days=i)
         chart_labels.append(date.strftime('%d %b'))
         
-        # PERBAIKAN: Data grafik juga dihitung dari 'created_at'
         daily_income = db.session.query(func.sum(Transaksi.total_harga)).filter(
             func.date(Transaksi.created_at) == date,
             Transaksi.status_pembayaran == 'success'  
@@ -160,7 +159,7 @@ def admin_motor_add():
                     flash('Format file tidak didukung. Gunakan JPG, PNG, atau WebP', 'danger')
                     return redirect(url_for('admin_motors'))
                 
-                # Cek ukuran (max 5MB)
+                # Cek ukuran foto
                 file.seek(0, 2)
                 file_size = file.tell()
                 file.seek(0)
@@ -185,7 +184,6 @@ def admin_motor_add():
         else:
             id_kategori = int(id_kategori)
         
-        # Simpan motor ke database
         motor_baru = Motor(
             nama_motor=request.form.get('nama_motor'),
             id_kategori=id_kategori,
@@ -230,27 +228,22 @@ def admin_motor_edit(id):
         motor.harga_sewa = int(request.form.get('harga_sewa'))
         motor.status_motor = request.form.get('status_motor')
         
-        # Jika ada gambar baru, upload dan ganti yang lama
         if 'gambar' in request.files:
             file = request.files['gambar']
             
             if file.filename != '':
-                # Validasi
                 if not allowed_file(file.filename):
                     flash('Format file tidak didukung', 'danger')
                     return redirect(url_for('admin_motors'))
                 
-                # Upload gambar baru
                 upload_result = upload_to_cloudinary(file)
                 
                 if upload_result:
-                    # Hapus gambar lama dari Cloudinary (jika ada)
                     if motor.foto_motor:
                         old_public_id = extract_public_id_from_url(motor.foto_motor)
                         if old_public_id:
                             delete_from_cloudinary(old_public_id)
                     
-                    # Set gambar baru
                     motor.foto_motor = upload_result['url']
         
         db.session.commit()
@@ -296,33 +289,25 @@ def admin_motor_delete(id):
         foto_url = motor.foto_motor
         nama_motor = motor.nama_motor
         
-        # HAPUS GAMBAR DARI CLOUDINARY
+        # Hapus gambar
         if foto_url:
-            print(f"\n{'='*60}")
-            print(f"🗑️ MENGHAPUS MOTOR: {nama_motor}")
-            print(f"   Foto URL: {foto_url}")
-            
             try:
-                # Extract public_id dari URL
                 public_id = extract_public_id_from_url(foto_url)
-                print(f"   Public ID: {public_id}")
+                # print(f"   Public ID: {public_id}")
                 
                 if public_id:
                     delete_result = delete_from_cloudinary(public_id)
-                    print(f"   Cloudinary delete result: {delete_result}")
-                    
-                    if delete_result:
-                        print(f"✅ Foto berhasil dihapus dari Cloudinary")
-                    else:
-                        print(f"⚠️ Gagal hapus foto dari Cloudinary")
-                else:
-                    print(f"⚠️ Tidak bisa extract public_id dari URL")
+                    # if delete_result:
+                    #     print(f"✅ Foto berhasil dihapus dari Cloudinary")
+                    # else:
+                    #     print(f"⚠️ Gagal hapus foto dari Cloudinary")
+                # else:
+                #     print(f"⚠️ Tidak bisa extract public_id dari URL")
                     
             except Exception as cloudinary_error:
                 print(f"⚠️ Error hapus dari Cloudinary: {str(cloudinary_error)}")
-            print(f"{'='*60}\n")
         
-        # HAPUS DARI DATABASE
+        # Hapus di database
         db.session.delete(motor)
         db.session.commit()
         
@@ -359,8 +344,6 @@ def admin_kategori_add():
         
         db.session.add(kategori_baru)
         db.session.commit()
-        
-        flash(f'✅ Kategori "{nama_kategori}" berhasil ditambahkan!', 'success')
         
     except Exception as e:
         db.session.rollback()
@@ -422,7 +405,7 @@ def admin_transaksi():
         Transaksi.tgl_kembali < today_date
     ).all()
     
-    # Hitung days_overdue untuk setiap transaksi
+    # Hitung total hari terlambat untuk setiap transaksi
     for overdue in overdue_list:
         tgl_k = overdue.tgl_kembali.date() if hasattr(overdue.tgl_kembali, 'date') else overdue.tgl_kembali
         overdue.days_overdue = (today_date - tgl_k).days
@@ -465,7 +448,6 @@ def admin_transaction_update(id):
         if field not in allowed_status:
             return jsonify({'success': False, 'error': 'Field tidak valid'}), 400
         
-        # --- BLOK BARU: VALIDASI KTP SEBELUM MOTOR DIKEMBALIKAN ---
         if field == 'status_rental' and value == 'Dikembalikan':
             if transaksi.status_verifikasi_ktp != 'Verified':
                 return jsonify({
@@ -485,17 +467,15 @@ def admin_transaction_update(id):
             if motor:
                 motor.status_motor = 'Tersedia'
                 
-            # 2. Hapus KTP dari Cloudinary
+            # Hapus ktp dari Cloudinary
             if transaksi.KTP and transaksi.KTP != '-':
                 try:
                     public_id = extract_public_id_from_url(transaksi.KTP)
                     if public_id:
                         delete_from_cloudinary(public_id)
-                        print(f"✅ Foto KTP dihapus saat dikembalikan: {public_id}")
                 except Exception as e:
                     print(f"⚠️ Error hapus KTP saat dikembalikan: {str(e)}")
                 
-                # Ubah kolom KTP jadi '-' agar tampil tulisan "No KTP" di HTML
                 transaksi.KTP = '-'
         
         db.session.commit()
@@ -521,14 +501,13 @@ def export_transaksi_pdf():
         status_filter = request.args.get('status', 'all')
         days_filter = request.args.get('days', 'all')
         
-        # Base query
         query = Transaksi.query.order_by(Transaksi.id_transaksi.desc())
         
-        # Terapkan Filter Status Pembayaran
+        # Filter Status Pembayaran
         if status_filter != 'all':
             query = query.filter_by(status_pembayaran=status_filter)
             
-        # Terapkan Filter Rentang Waktu (Misal: 7 atau 30 hari ke belakang)
+        # Filter Rentang Waktu 
         if days_filter != 'all':
             try:
                 days_int = int(days_filter)
@@ -541,7 +520,7 @@ def export_transaksi_pdf():
         transactions_raw = query.all()
         today_date = datetime.now().date()
         
-        # Pre-calculate data 
+        # Hitung data 
         transactions = []
         for t in transactions_raw:
             nama_cust = t.nama_cust or (t.customer.nama if getattr(t, 'customer', None) else '-')
@@ -572,13 +551,12 @@ def export_transaksi_pdf():
                 'status_pembayaran': t.status_pembayaran,
                 'status_rental': t.status_rental,
                 'is_overdue': is_overdue,
-                # 4. Tambahkan data kerusakan ke dalam payload agar bisa diprint di PDF
                 'kondisi_motor': getattr(t, 'kondisi_motor', 'Tidak Ada Kerusakan'),
                 'detail_kerusakan': getattr(t, 'detail_kerusakan', '-'),
                 'denda_kerusakan': getattr(t, 'denda_kerusakan', 0)
             })
         
-        # Hitung summary
+        # Hitung total
         total_transaksi = len(transactions)
         total_pendapatan = sum(t['total_harga'] for t in transactions if t['status_pembayaran'] == 'success')
         total_pending = len([t for t in transactions if t['status_pembayaran'] == 'pending'])
@@ -602,7 +580,7 @@ def export_transaksi_pdf():
         # Buat buffer memori virtual untuk menyimpan PDF
         pdf_buffer = io.BytesIO()
         
-        # Convert HTML ke PDF dan simpan langsung ke dalam memori (pdf_buffer)
+        # Convert HTML ke PDF dan simpan langsung ke dalam memori 
         pisa_status = pisa.CreatePDF(
             html_content,
             dest=pdf_buffer,
@@ -615,7 +593,7 @@ def export_transaksi_pdf():
         # Kembalikan posisi "kursor baca" ke awal file (byte 0) agar bisa dibaca oleh Flask
         pdf_buffer.seek(0)
         
-        print(f"✅ PDF generated in memory: {filename}")
+        # print(f"✅ PDF generated in memory: {filename}")
         
         # Kirim file langsung dari memori ke pengguna
         return send_file(
@@ -723,7 +701,6 @@ Terima kasih! 🙏"""
         result = response.json()
         
         if result.get('status') == True or str(result.get('status')).lower() == 'true':
-            print(f"✅ Reminder sent to: {phone}")
             return jsonify({
                 'success': True,
                 'message': f'Reminder berhasil dikirim ke {hp_cust}'
@@ -735,7 +712,7 @@ Terima kasih! 🙏"""
             }), 500
             
     except Exception as e:
-        print(f"Error send reminder: {str(e)}")
+        # print(f"Error send reminder: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)
@@ -813,7 +790,7 @@ def admin_customers():
     total_active = user_customer.filter_by(is_active=True).count()
     total_inactive = user_customer.filter_by(is_active=False).count()
     
-    # Query dengan filter + join untuk total_orders
+    # Query untuk total_orders
     query = db.session.query(
         User,db.func.count(Transaksi.id_transaksi).label('total_orders')
     ).outerjoin(Transaksi, User.id == Transaksi.id_customer
@@ -915,7 +892,7 @@ def customer_detail(id):
         })
         
     except Exception as e:
-        print(f"Error getting customer detail: {str(e)}")
+        # print(f"Error getting customer detail: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)
@@ -969,7 +946,7 @@ def admin_vouchers():
 
     total_vouchers = Voucher.query.count()
     
-    # Aktif: is_active=True, dalam periode, kuota belum habis
+    # Aktif dalam periode, kuota belum habis
     total_aktif = Voucher.query.filter(
         Voucher.is_active == True,
         Voucher.tgl_mulai <= waktu_skrng,
@@ -977,22 +954,22 @@ def admin_vouchers():
         Voucher.total_pakai < Voucher.kuota
     ).count()
     
-    # Non-Aktif: is_active=False
+    # Non-Aktif
     total_nonaktif = Voucher.query.filter_by(is_active=False).count()
     
-    # Expired: tgl_selesai < now (dan masih aktif)
+    # Expired
     total_expired = Voucher.query.filter(
         Voucher.is_active == True,
         Voucher.tgl_selesai < waktu_skrng
     ).count()
     
-    # Belum Aktif: tgl_mulai > now (dan masih aktif)
+    # Belum Aktif
     total_belumAktif = Voucher.query.filter(
         Voucher.is_active == True,
         Voucher.tgl_mulai > waktu_skrng
     ).count()
     
-    # Kuota Habis: total_pakai >= kuota (dalam periode)
+    # Kuota Habis
     total_habis = Voucher.query.filter(
         Voucher.is_active == True,
         Voucher.total_pakai >= Voucher.kuota,
@@ -1002,7 +979,6 @@ def admin_vouchers():
     
     total_used = db.session.query(db.func.sum(Voucher.total_pakai)).scalar() or 0
     
-    # Query dengan filter
     query = Voucher.query
     
     if filter_type == 'active':
@@ -1032,11 +1008,9 @@ def admin_vouchers():
             Voucher.tgl_selesai >= waktu_skrng
         )
     
-    # Search
     if search_query:
         query = query.filter(Voucher.kode_voucher.ilike(f'%{search_query}%'))
-    
-    # Order dan paginate
+
     query = query.order_by(Voucher.id.desc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     
@@ -1102,7 +1076,7 @@ def admin_voucher_add():
         db.session.add(voucher_baru)
         db.session.commit()
         
-        flash(f'✅ Voucher "{kode}" berhasil ditambahkan!', 'success')
+        # flash(f'✅ Voucher "{kode}" berhasil ditambahkan!', 'success')
         
     except Exception as e:
         db.session.rollback()
@@ -1129,7 +1103,7 @@ def admin_voucher_edit(id):
         tgl_selesai = datetime.strptime(tgl_selesai_str, '%Y-%m-%dT%H:%M')
         kuota = int(request.form.get('kuota') or 100)
         
-        # Cek duplikasi kode (kecuali voucher yang sedang diedit)
+        # Cek duplikasi voucher 
         existing = Voucher.query.filter(
             Voucher.kode_voucher == kode,
             Voucher.id != id
@@ -1154,7 +1128,7 @@ def admin_voucher_edit(id):
         
         db.session.commit()
         
-        flash(f'✅ Voucher "{kode}" berhasil diupdate!', 'success')
+        # flash(f'✅ Voucher "{kode}" berhasil diupdate!', 'success')
         
     except Exception as e:
         db.session.rollback()
@@ -1261,6 +1235,6 @@ def admin_voucher_reset(id):
     db.session.commit()
     
     flash(f'Kuota penggunaan voucher {voucher.kode_voucher} berhasil direset menjadi 0.', 'success')
-    
+
     # Redirect kembali ke halaman sebelumnya (mempertahankan filter/halaman)
     return redirect(request.referrer or url_for('admin.admin_vouchers'))

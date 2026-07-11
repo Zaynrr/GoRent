@@ -418,7 +418,6 @@
         statusSelect.value = motor.status_motor;
         statusSelect.disabled = false;
 
-        // Show current image if exists
         if (motor.foto_motor) {
             document.getElementById('currentImagePreview').src = motor.foto_motor;
             document.getElementById('imagePreviewContainer').style.display = 'block';
@@ -465,7 +464,7 @@
         }
     }
 
-    // ===== STATUS TOGGLE (Hide/Show) =====
+    // ===== Toggle (Hide/Show) =====
     function toggleStatus(id, name, action) {
         const message = action === 'hide' 
             ? `Hide "${name}" from customer catalog?\n\nThe motor data will be kept, but customers won't see it.`
