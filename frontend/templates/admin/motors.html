@@ -467,8 +467,8 @@
     // ===== Toggle (Hide/Show) =====
     function toggleStatus(id, name, action) {
         const message = action === 'hide' 
-            ? `Hide "${name}" from customer catalog?\n\nThe motor data will be kept, but customers won't see it.`
-            : `Show "${name}" in customer catalog?`;
+            ? `Hide "${name}" Dari katalog customer?\n\nData motor akan disimpan, tetapi pelanggan tidak akan melihatnya.`
+            : `Show "${name}" Di katalog customer?`;
         
         if (confirm(message)) {
             document.getElementById('toggle_motor_id').value = id;
@@ -480,10 +480,10 @@
 
     // ===== DELETE MOTOR =====
     function deleteMotor(id, name) {
-        const message = `⚠️ DELETE "${name}" PERMANENTLY?\n\nThis action CANNOT be undone!\n- Motor data will be deleted from database\n- Image will be deleted from Cloudinary\n\nAre you sure?`;
+        const message = `⚠️ Hapus "${name}"?\n\nTindakan ini tidak dapat dibatalkan!\n- Data motor akan dihapus dari database\n- Gambar akan dihapus dari Cloudinary\n\nYakin...?`;
         
         if (confirm(message)) {
-            if (confirm('This is your LAST CHANCE. Really delete?')) {
+            if (confirm('Kesempatan terakhir! Yakin ingin menghapus?')) {
                 document.getElementById('delete_motor_id').value = id;
                 document.getElementById('deleteForm').action = `/admin/motor/delete/${id}`;
                 document.getElementById('deleteForm').submit();

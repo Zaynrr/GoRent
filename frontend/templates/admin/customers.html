@@ -108,8 +108,8 @@
                     <th>Nama</th>
                     <th>Email</th>
                     <th>No Hp</th>
-                    <th>Registered</th>
-                    <th>Total Order</th>
+                    <th>Terdaftar</th>
+                    <th>Total Pesanan</th>
                     <th>Status</th>
                     <th>Aksi</th>
                 </tr>
@@ -252,11 +252,11 @@
 <div id="detailModal" class="admin-modal" onclick="closeDetailModal()">
     <div class="admin-modal-content" style="max-width: 700px;" onclick="event.stopPropagation()">
         <div class="admin-modal-header">
-            <h2><i class="fas fa-user"></i> Customer Details</h2>
+            <h2><i class="fas fa-user"></i> Detail Customer</h2>
         </div>
         <div id="detailContent"></div>
         <div class="admin-modal-actions">
-            <button class="btn" style="background: var(--bg-secondary);" onclick="closeDetailModal()">Close</button>
+            <button class="btn" style="background: var(--bg-secondary);" onclick="closeDetailModal()">Tutup</button>
         </div>
     </div>
 </div>
@@ -276,12 +276,12 @@
             <button class="btn" 
                     style="background: var(--bg-secondary); color: var(--text-secondary); min-width: 120px;"
                     onclick="closeConfirmModal()">
-                <i class="fas fa-times"></i> Cancel
+                <i class="fas fa-times"></i> Batal
             </button>
             <button class="btn btn-primary" 
                     id="confirmBtn"
                     style="min-width: 120px;">
-                <i class="fas fa-check"></i> Confirm
+                <i class="fas fa-check"></i> Setuju
             </button>
         </div>
     </div>
@@ -390,18 +390,18 @@ function viewCustomerDetail(customerId) {
                                 <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">${customer.email}</div>
                             </div>
                             <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
-                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Phone</div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">No Hp</div>
                                 <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">${customer.no_hp}</div>
                             </div>
                         </div>
                         
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                             <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
-                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Registered</div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Terdaftar</div>
                                 <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">${customer.created_at || '-'}</div>
                             </div>
                             <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px;">
-                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Total Orders</div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Total Pesanan</div>
                                 <div style="font-size: 14px; font-weight: 600; color: var(--primary);">${customer.total_orders || 0} orders</div>
                             </div>
                         </div>
@@ -440,8 +440,8 @@ function toggleCustomerStatus(customerId, customerName, action) {
     document.getElementById('confirmTitle').textContent = isDeactivate ? 'Non-Active Account?' : 'Activate Account?';
     
     document.getElementById('confirmMessage').innerHTML = isDeactivate
-        ? `Are you sure you want to <strong>deactivate</strong> the account of <strong>${customerName}</strong>?<br><br>This customer will <strong>NOT be able to login</strong> until the account is reactivated.`
-        : `Are you sure you want to <strong>activate</strong> the account of <strong>${customerName}</strong>?<br><br>This customer will be able to login again.`;
+        ? `Apakah anda yakin ingin <strong>deactivate</strong> akun dari <strong>${customerName}</strong>?<br><br>Pelanggan ini akan <strong>tidak bisa login</strong> kembali setelah akun dinonaktifkan.`
+        : `Apakah anda yakin ingin <strong>activate</strong> akun dari <strong>${customerName}</strong>?<br><br>Pelanggan ini akan <strong>bisa login</strong> kembali setelah akun diaktifkan.`;
     
     document.getElementById('confirmBtn').innerHTML = isDeactivate 
         ? '<i class="fas fa-user-slash"></i> Deactivate' 
