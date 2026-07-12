@@ -67,7 +67,7 @@ class Transaksi(db.Model):
     id_customer = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     id_motor = db.Column(db.Integer, db.ForeignKey('motor.id_motor'), nullable=False)
     order_id = db.Column(db.String(50), unique=True, nullable=False)
-    id_voucher = db.Column(db.Integer, db.ForeignKey('voucher.id'), nullable=False)
+    id_voucher = db.Column(db.Integer, db.ForeignKey('voucher.id'), nullable=True)
     nama_cust = db.Column(db.String(100), nullable=True)
     hp_cust = db.Column(db.String(20), nullable=True)
     email_cust = db.Column(db.String(100), nullable=True)
