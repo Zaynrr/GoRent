@@ -527,10 +527,8 @@ def export_transaksi_pdf():
         
         query = Transaksi.query.order_by(Transaksi.id_transaksi.desc())
         
-        # Filter Status Pembayaran
-        if status_filter != 'all':
-            query = query.filter_by(status_pembayaran=status_filter)
-            
+        total_semua_transaksi = query.count()
+        
         # Filter Rentang Waktu 
         if days_filter != 'all':
             try:
@@ -539,6 +537,14 @@ def export_transaksi_pdf():
                 query = query.filter(Transaksi.tgl_sewa >= batas_waktu)
             except ValueError:
                 pass 
+        
+        # Filter Status / Kerusakan
+        if status_filter == 'damage':
+            # Hanya ambil yang kondisinya bukan 'Tidak Ada Kerusakan' dan bukan None
+            query = query.filter(Transaksi.kondisi_motor != 'Tidak Ada Kerusakan', Transaksi.kondisi_motor.isnot(None))
+        elif status_filter != 'all':
+            query = query.filter_by(status_pembayaran=status_filter)
+        
         
         # Convert ke list
         transactions_raw = query.all()
@@ -580,36 +586,55 @@ def export_transaksi_pdf():
                 'denda_kerusakan': getattr(t, 'denda_kerusakan', 0)
             })
         
-        # Hitung total
-        total_transaksi = len(transactions)
-        total_pendapatan = sum(t['total_harga'] for t in transactions if t['status_pembayaran'] == 'success')
-        total_pending = len([t for t in transactions if t['status_pembayaran'] == 'pending'])
-        total_success = len([t for t in transactions if t['status_pembayaran'] == 'success'])
-        
-        html_content = render_template(
-            'pdf/transaksi_report.html',
-            transactions=transactions,
-            total_transaksi=total_transaksi,
-            total_pendapatan=total_pendapatan,
-            total_pending=total_pending,
-            total_success=total_success,
-            status_filter=status_filter,
-            days_filter=days_filter, 
-            current_time=datetime.now().strftime('%d %B %Y, %H:%M')
-        )
+        # Render HTML Content berdasarkan jenis filter
+        if status_filter == 'damage':
+            total_kerusakan = len(transactions)
+            total_denda = sum(t['denda_kerusakan'] for t in transactions)
+            
+            html_content = render_template(
+                'pdf/transaksi_report.html',
+                report_type='damage', 
+                transactions=transactions,
+                total_transaksi=total_semua_transaksi,
+                total_kerusakan=total_kerusakan,
+                total_denda=total_denda,
+                status_filter='Laporan Kerusakan Motor',
+                days_filter=days_filter,
+                current_time=datetime.now().strftime('%d %B %Y, %H:%M')
+            )
+        else:
+            total_transaksi = len(transactions)
+            total_pendapatan = sum(t['total_harga'] for t in transactions if t['status_pembayaran'] == 'success')
+            total_pending = len([t for t in transactions if t['status_pembayaran'] == 'pending'])
+            total_success = len([t for t in transactions if t['status_pembayaran'] == 'success'])
+            
+            html_content = render_template(
+                'pdf/transaksi_report.html',
+                report_type='normal', # Flag untuk template
+                transactions=transactions,
+                total_transaksi=total_transaksi,
+                total_pendapatan=total_pendapatan,
+                total_pending=total_pending,
+                total_success=total_success,
+                status_filter=status_filter,
+                days_filter=days_filter, 
+                current_time=datetime.now().strftime('%d %B %Y, %H:%M')
+            )
         
         # Generate PDF
-        filename = f"laporan_transaksi_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        prefix = "laporan_kerusakan_" if status_filter == 'damage' else "laporan_transaksi_"
+        filename = f"{prefix}{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         
         # Buat buffer memori virtual untuk menyimpan PDF
         pdf_buffer = io.BytesIO()
+        pisa_status = pisa.CreatePDF(html_content, dest=pdf_buffer, encoding='utf-8')
         
         # Convert HTML ke PDF dan simpan langsung ke dalam memori 
-        pisa_status = pisa.CreatePDF(
-            html_content,
-            dest=pdf_buffer,
-            encoding='utf-8'
-        )
+        # pisa_status = pisa.CreatePDF(
+        #     html_content,
+        #     dest=pdf_buffer,
+        #     encoding='utf-8'
+        # )
         
         if pisa_status.err:
             raise Exception(f"PDF generation error: {pisa_status.err}")
