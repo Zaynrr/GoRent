@@ -152,7 +152,7 @@ def admin_motor_add():
         cek_motor = Motor.query.filter_by(nama_motor=nama_motor_input).first()
         
         if cek_motor:
-            flash(f'Motor dengan nama "{nama_motor_input}" sudah ada di database!', 'warning')
+            flash(f'Motor dengan nama "{nama_motor_input}" sudah ada!', 'warning')
             return redirect(url_for('admin.admin_motors'))
         
         foto_motor = None
@@ -343,12 +343,14 @@ def admin_kategori_add():
     try:
         nama_kategori = request.form.get('nama_kategori', '').strip()
         
+        cek_kategori = Kategori.query.filter(func.lower(Kategori.nama_kategori) == nama_kategori.lower()).first()
+        
         # Validasi
         if not nama_kategori:
             flash('Nama kategori wajib diisi!', 'danger')
             return redirect(url_for('admin.admin_motors'))
         
-        if Kategori.query.filter_by(nama_kategori=nama_kategori).first():
+        if cek_kategori:
             flash(f'Kategori "{nama_kategori}" sudah ada!', 'danger')
             return redirect(url_for('admin.admin_motors'))
         
