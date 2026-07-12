@@ -243,9 +243,6 @@
         
         const currentTotal = currentRentalTotal;
         
-        // console.log('🔍 Cek voucher:', code);
-        // console.log('💰 Total harga asli:', currentTotal);
-        
         if (currentTotal <= 0) {
             msg.style.color = '#c62828';
             msg.textContent = '❌ Pilih tanggal rental terlebih dahulu';
@@ -264,8 +261,6 @@
         .then(response => response.json())
         .then(data => {
             codeInput.style.borderColor = '';
-            
-            // console.log('📥 Response dari server:', data);
             
             if (data.success) {
                 appliedVoucher = {
@@ -291,13 +286,17 @@
                 
                 document.getElementById('discountRow').style.display = 'none';
                 codeInput.style.borderColor = '#c62828';
+
+                document.getElementById('totalPrice').textContent = formatRupiah(currentTotal);
             }
         })
         .catch(error => {
-            // console.error('❌ Error:', error);
             codeInput.style.borderColor = '';
             msg.style.color = '#c62828';
             msg.textContent = '❌ Terjadi kesalahan koneksi';
+
+            document.getElementById('discountRow').style.display = 'none';
+            document.getElementById('totalPrice').textContent = formatRupiah(currentTotal);
         });
     }
     
@@ -492,11 +491,6 @@
                     // Ubah teks tombol jadi loading sebentar
                     btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membatalkan sesi...';
                     
-                    // FITUR AUTO-CLEAN:
-                    // Panggil API Cancel secara background agar:
-                    // 1. KTP di Cloudinary dihapus (tidak nyampah)
-                    // 2. Motor kembali "Tersedia" agar bisa di-checkout ulang
-                    // 3. Kuota voucher dikembalikan
                     fetch(`/api/cancel-transaction/${orderId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' }
