@@ -147,6 +147,14 @@ def admin_motors():
 @admin_required
 def admin_motor_add():
     try:
+        nama_motor_input = request.form.get('nama_motor')
+       
+        cek_motor = Motor.query.filter_by(nama_motor=nama_motor_input).first()
+        
+        if cek_motor:
+            flash(f'Motor dengan nama "{nama_motor_input}" sudah ada di database!', 'warning')
+            return redirect(url_for('admin.admin_motors'))
+        
         foto_motor = None
         
         # Validasi dan upload gambar
@@ -157,7 +165,7 @@ def admin_motor_add():
                 # Cek format file
                 if not allowed_file(file.filename):
                     flash('Format file tidak didukung. Gunakan JPG, PNG, atau WebP', 'danger')
-                    return redirect(url_for('admin_motors'))
+                    return redirect(url_for('admin.admin_motors'))
                 
                 # Cek ukuran foto
                 file.seek(0, 2)
@@ -166,7 +174,7 @@ def admin_motor_add():
                 
                 if file_size > 5 * 1024 * 1024:
                     flash('Ukuran file terlalu besar. Maksimal 5MB', 'danger')
-                    return redirect(url_for('admin_motors'))
+                    return redirect(url_for('admin.admin_motors'))
                 
                 # Upload ke Cloudinary
                 upload_result = upload_to_cloudinary(file)
@@ -175,7 +183,7 @@ def admin_motor_add():
                     foto_motor = upload_result['url']
                 else:
                     flash('Gagal upload gambar ke Cloudinary', 'danger')
-                    return redirect(url_for('admin_motors'))
+                    return redirect(url_for('admin.admin_motors'))
         
         # Ambil id_kategori dari form
         id_kategori = request.form.get('id_kategori')
@@ -234,7 +242,7 @@ def admin_motor_edit(id):
             if file.filename != '':
                 if not allowed_file(file.filename):
                     flash('Format file tidak didukung', 'danger')
-                    return redirect(url_for('admin_motors'))
+                    return redirect(url_for('admin.admin_motors'))
                 
                 upload_result = upload_to_cloudinary(file)
                 
@@ -284,6 +292,12 @@ def admin_motor_toggle_status():
 @admin_required
 def admin_motor_delete(id):
     motor = Motor.query.get_or_404(id)
+    
+    cek_motor = Transaksi.query.filter_by(id_motor=id).first()
+    
+    if cek_motor:
+        flash(f'Motor "{motor.nama_motor}" tidak bisa dihapus karena memiliki riwayat transaksi/pernah disewa.', 'warning')
+        return redirect(url_for('admin.admin_motors'))
     
     try:
         foto_url = motor.foto_motor
@@ -1058,15 +1072,15 @@ def admin_voucher_add():
         # Validasi
         if not kode:
             flash('Kode voucher wajib diisi!', 'danger')
-            return redirect(url_for('admin_vouchers'))
+            return redirect(url_for('admin.admin_vouchers'))
         
         if Voucher.query.filter_by(kode_voucher=kode).first():
             flash(f'Kode voucher "{kode}" sudah ada!', 'danger')
-            return redirect(url_for('admin_vouchers'))
+            return redirect(url_for('admin.admin_vouchers'))
         
         if tgl_selesai <= tgl_mulai:
             flash('Tanggal selesai harus setelah tanggal mulai!', 'danger')
-            return redirect(url_for('admin_vouchers'))
+            return redirect(url_for('admin.admin_vouchers'))
         
         voucher_baru = Voucher(
             kode_voucher=kode,
@@ -1084,7 +1098,7 @@ def admin_voucher_add():
         db.session.add(voucher_baru)
         db.session.commit()
         
-        # flash(f'✅ Voucher "{kode}" berhasil ditambahkan!', 'success')
+        flash(f'✅ Voucher "{kode}" berhasil ditambahkan!', 'success')
         
     except Exception as e:
         db.session.rollback()
@@ -1119,11 +1133,11 @@ def admin_voucher_edit(id):
         
         if existing:
             flash(f'Kode voucher "{kode}" sudah digunakan voucher lain!', 'danger')
-            return redirect(url_for('admin_vouchers'))
+            return redirect(url_for('admin.admin_vouchers'))
         
         if tgl_selesai <= tgl_mulai:
             flash('Tanggal selesai harus setelah tanggal mulai!', 'danger')
-            return redirect(url_for('admin_vouchers'))
+            return redirect(url_for('admin.admin_vouchers'))
         
         voucher.kode_voucher = kode
         voucher.tipe_diskon = tipe
@@ -1136,7 +1150,7 @@ def admin_voucher_edit(id):
         
         db.session.commit()
         
-        # flash(f'✅ Voucher "{kode}" berhasil diupdate!', 'success')
+        flash(f'✅ Voucher "{kode}" berhasil diupdate!', 'success')
         
     except Exception as e:
         db.session.rollback()
@@ -1160,7 +1174,7 @@ def admin_voucher_toggle(id):
         db.session.rollback()
         flash(f'❌ Gagal: {str(e)}', 'danger')
     
-    return redirect(url_for('admin_vouchers'))
+    return redirect(url_for('admin.admin_vouchers'))
 
 @admin_bp.route('/voucher/delete/<int:id>', methods=['POST'])
 @login_required
@@ -1172,7 +1186,7 @@ def admin_voucher_delete(id):
         # Cek apakah voucher pernah dipakai
         if voucher.total_pakai > 0:
             flash(f'❌ Voucher "{voucher.kode_voucher}" sudah digunakan {voucher.total_pakai} kali dan tidak bisa dihapus!', 'danger')
-            return redirect(url_for('admin_vouchers'))
+            return redirect(url_for('admin.admin_vouchers'))
         
         cekVoucher_transaksi = Transaksi.query.filter_by(id_voucher=voucher.id).first()
         
