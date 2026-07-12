@@ -104,7 +104,7 @@ class Voucher(db.Model):
     max_diskon = db.Column(db.Integer, nullable=True) # Maksimal diskon (khusus percent)
     tgl_mulai = db.Column(db.DateTime, nullable=False)
     tgl_selesai = db.Column(db.DateTime, nullable=False)
-    kuota = db.Column(db.Integer, default=100) # Kuota penggunaan
+    kuota = db.Column(db.Integer, default=100) 
     total_pakai = db.Column(db.Integer, default=0)
     is_active = db.Column(db.Boolean, default=True)
     
