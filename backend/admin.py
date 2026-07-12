@@ -590,7 +590,8 @@ def export_transaksi_pdf():
                 'is_overdue': is_overdue,
                 'kondisi_motor': getattr(t, 'kondisi_motor', 'Tidak Ada Kerusakan'),
                 'detail_kerusakan': getattr(t, 'detail_kerusakan', '-'),
-                'denda_kerusakan': getattr(t, 'denda_kerusakan', 0)
+                'denda_kerusakan': getattr(t, 'denda_kerusakan', 0),
+                'status_pembayaran_denda': getattr(t, 'status_pembayaran_denda', '-')
             })
         
         # Render HTML Content berdasarkan jenis filter
@@ -617,7 +618,7 @@ def export_transaksi_pdf():
             
             html_content = render_template(
                 'pdf/transaksi_report.html',
-                report_type='normal', # Flag untuk template
+                report_type='normal',
                 transactions=transactions,
                 total_transaksi=total_transaksi,
                 total_pendapatan=total_pendapatan,
@@ -636,17 +637,9 @@ def export_transaksi_pdf():
         pdf_buffer = io.BytesIO()
         pisa_status = pisa.CreatePDF(html_content, dest=pdf_buffer, encoding='utf-8')
         
-        # Convert HTML ke PDF dan simpan langsung ke dalam memori 
-        # pisa_status = pisa.CreatePDF(
-        #     html_content,
-        #     dest=pdf_buffer,
-        #     encoding='utf-8'
-        # )
-        
         if pisa_status.err:
             raise Exception(f"PDF generation error: {pisa_status.err}")
         
-        # Kembalikan posisi "kursor baca" ke awal file (byte 0) agar bisa dibaca oleh Flask
         pdf_buffer.seek(0)
         
         # print(f"✅ PDF generated in memory: {filename}")
@@ -660,7 +653,6 @@ def export_transaksi_pdf():
         )
         
     except Exception as e:
-        print(f"❌ Error export PDF: {str(e)}")
         import traceback
         traceback.print_exc()
         flash(f'Gagal export PDF: {str(e)}', 'danger')

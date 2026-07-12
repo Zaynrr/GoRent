@@ -8,24 +8,26 @@
         <h1>Riwayat Transaksi</h1>
         <p>Mengelola dan melihat semua data transaksi.</p>
     </div>
-    <div style="display: flex; gap: 8px; align-items: center;">
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px;">
         <label for="pdfDateFilter" style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">
             <i class="fas fa-calendar-alt"></i> Filter Export:
         </label>
-        <select id="pdfDateFilter" class="admin-select" style="padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: white;">
+        <select id="pdfDateFilter" class="admin-select" style="padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: white; flex-grow: 1; min-width: 150px;">
             <option value="all">Semua Waktu</option>
             <option value="7">7 Hari Terakhir</option>
             <option value="30">30 Hari Terakhir</option>
         </select>
-        <button onclick="exportPDF('all')" class="btn btn-sm" style="background: #d32f2f; color: white; border: none; cursor: pointer;">
-            <i class="fas fa-file-pdf"></i> Export PDF
-        </button>
-        <button onclick="exportPDF('success')" class="btn btn-sm" style="background: #388e3c; color: white; border: none; cursor: pointer;">
-            <i class="fas fa-file-pdf"></i> Export Success Only
-        </button>
-        <button onclick="exportPDF('damage')" class="btn btn-sm" style="background: #f57c00; color: white; border: none; cursor: pointer;">
-            <i class="fas fa-file-pdf"></i> Export Kerusakan
-        </button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; flex-grow: 1;">
+            <button onclick="exportPDF('all')" class="btn btn-sm" style="background: #d32f2f; color: white; border: none; cursor: pointer; flex-grow: 1; justify-content: center;">
+                <i class="fas fa-file-pdf"></i> Export PDF
+            </button>
+            <button onclick="exportPDF('success')" class="btn btn-sm" style="background: #388e3c; color: white; border: none; cursor: pointer; flex-grow: 1; justify-content: center;">
+                <i class="fas fa-file-pdf"></i> Success Only
+            </button>
+            <button onclick="exportPDF('damage')" class="btn btn-sm" style="background: #f57c00; color: white; border: none; cursor: pointer; flex-grow: 1; justify-content: center;">
+                <i class="fas fa-file-pdf"></i> Export Kerusakan
+            </button>
+        </div>
     </div>
 </div>
 
