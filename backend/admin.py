@@ -838,7 +838,7 @@ def admin_customers():
     total_active = user_customer.filter_by(is_active=True).count()
     total_inactive = user_customer.filter_by(is_active=False).count()
     
-    # Query untuk total_orders
+    # Query untuk total orders
     query = db.session.query(
         User,db.func.count(Transaksi.id_transaksi).label('total_orders')
     ).outerjoin(Transaksi, User.id == Transaksi.id_customer

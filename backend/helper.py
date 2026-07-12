@@ -105,14 +105,6 @@ def extract_public_id_from_url(url):
 def send_invoice_whatsapp(transaksi, hp_cust):
     api_key = Config.FONNTE_API_KEY
     
-    if not api_key:
-        # print('[ERROR] FONNTE_API_KEY belum diatur di .env')
-        return False, 'API key not configured'
-    
-    if not hp_cust:
-        # print('[ERROR] Nomor HP customer kosong')
-        return False, 'Customer phone is empty'
-    
     try:
         tgl_sewa = transaksi.tgl_sewa.strftime('%d %B %Y') if transaksi.tgl_sewa else '-'
         tgl_kembali = transaksi.tgl_kembali.strftime('%d %B %Y') if transaksi.tgl_kembali else '-'
@@ -206,15 +198,7 @@ Selamat berkendara! 🏍️"""
 # Kirim Email Otomatis
 def send_invoice_email(transaksi, cust_email):
     api_key = Config.RESEND_API_KEY
-    
-    if not api_key:
-        print('[ERROR] RESEND_API_KEY belum diatur. Email tidak dikirim.')
-        return False, 'API key not configured'
-    
-    if not cust_email:
-        print('[ERROR] Email customer kosong')
-        return False, 'Customer email is empty'
-    
+
     try:
         resend.api_key = api_key
         
@@ -462,7 +446,7 @@ def login_required(f):
         
         # Untuk mengatasi jika password diubah, maka sesi lama akan berakhir
         if session.get('password_hash') != user.password_hash:
-            session.clear() # Paksa logout
+            session.clear() 
             flash('Sesi berakhir. Password akun ini telah diubah, silakan login kembali dengan password baru.', 'warning')
             return redirect(url_for('auth.login'))
         

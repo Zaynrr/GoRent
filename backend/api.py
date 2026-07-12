@@ -274,12 +274,12 @@ def midtrans_notification():
             }), 200
 
         # Skip jika sudah dibatalkan customer
-        if transaksi.status_pembayaran == 'cancelled':
-            return jsonify({'status': 'success'}), 200
+        # if transaksi.status_pembayaran == 'cancelled':
+        #     return jsonify({'status': 'success'}), 200
         
-        # IDEMPOTENCY CHECK
-        if status_transaksi in ['settlement', 'capture'] and transaksi.status_pembayaran == 'success':
-            return jsonify({'status': 'success'}), 200
+        # # IDEMPOTENCY CHECK
+        # if status_transaksi in ['settlement', 'capture'] and transaksi.status_pembayaran == 'success':
+        #     return jsonify({'status': 'success'}), 200
 
         if expiry_time:
             try:
