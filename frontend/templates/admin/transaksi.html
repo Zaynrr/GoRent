@@ -425,13 +425,12 @@
             </tbody>
         </table>
     </div>
-    <div class="admin-pagination" style="flex-wrap: wrap; gap: 16px; justify-content: center;">
-        <span style="text-align: center;">
+    <div class="admin-pagination">
+        <span>
             Page {{ pagination.page }} of {{ pagination.pages }} 
-            <br>({{ pagination.total }} total transactions)
+            ({{ pagination.total }} total transactions)
         </span>
-
-        <div class="admin-actions" style="flex-wrap: wrap; justify-content: center; gap: 8px;">
+        <div class="admin-actions">
             {% if pagination.has_prev %}
                 <a href="{{ url_for('admin.admin_transaksi', page=pagination.prev_num, filter=filter_type) }}" 
                 class="admin-btn-icon admin-btn-view" 

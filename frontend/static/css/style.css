@@ -2495,6 +2495,7 @@ main {
 .admin-actions {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
 .admin-btn-icon {
@@ -3606,7 +3607,6 @@ main {
         margin-bottom: 20px;
     }
 
-
     /* Motor Grid - jadi slide/swipe menyamping di HP */
     .motor-grid {
         display: flex;
@@ -3692,6 +3692,17 @@ main {
 
     .admin-search-box {
         max-width: 100%;
+    }
+
+    .admin-pagination {
+        flex-direction: column; 
+        justify-content: center;
+        gap: 16px;
+        text-align: center; 
+    }
+
+    .admin-pagination .admin-actions {
+        justify-content: center; 
     }
 
     .success-section {
