@@ -1174,7 +1174,7 @@ def admin_voucher_delete(id):
             flash(f'❌ Voucher "{voucher.kode_voucher}" sudah digunakan {voucher.total_pakai} kali dan tidak bisa dihapus!', 'danger')
             return redirect(url_for('admin_vouchers'))
         
-        cekVoucher_transaksi = Transaksi.query.filter_by(voucher_id=voucher.id).first()
+        cekVoucher_transaksi = Transaksi.query.filter_by(id_voucher=voucher.id).first()
         
         if cekVoucher_transaksi:
             flash(f'❌ Voucher "{voucher.kode_voucher}" sudah tercatat di riwayat Transaksi pelanggan dan tidak boleh dihapus. Silakan gunakan fitur Non-Aktifkan.', 'danger')
