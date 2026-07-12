@@ -413,6 +413,12 @@ def admin_transaksi():
     
     unverified_ktp_count = Transaksi.query.filter_by(status_verifikasi_ktp='Belum Diverifikasi').count()
     
+    # Stats kerusakan
+    damaged_count = Transaksi.query.filter(
+        Transaksi.kondisi_motor != 'Tidak Ada Kerusakan', 
+        Transaksi.kondisi_motor.isnot(None)
+    ).count()
+    
     today_date = datetime.now().date()
     overdue_list = Transaksi.query.options(
         db.joinedload(Transaksi.motor)
@@ -442,6 +448,7 @@ def admin_transaksi():
         with_voucher_count=with_voucher_count,
         without_voucher_count=without_voucher_count,
         unverified_ktp_count=unverified_ktp_count,
+        damaged_count=damaged_count,
         overdue_count=overdue_count,
         overdue_list=overdue_list,
         today_date=today_date
