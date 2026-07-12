@@ -1,4 +1,4 @@
-from flask import Blueprint, app, render_template, request, session, flash, redirect, url_for
+from flask import Blueprint, render_template, request, session, flash, redirect, url_for
 from backend.model import db, User, Motor, Kategori, Transaksi
 from backend.helper import login_required
 

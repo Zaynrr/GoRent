@@ -1,7 +1,7 @@
-from flask import Blueprint, app, app, flash, request, jsonify, session
+from flask import Blueprint, flash, request, jsonify, session
 from backend.model import db, Motor, Transaksi, Voucher
 from backend.helper import login_required, allowed_file, upload_ktp_to_cloudinary, delete_from_cloudinary, extract_public_id_from_url, send_invoice_email, send_invoice_whatsapp
-import requests, base64, hashlib, random
+import requests, base64, random
 from datetime import datetime
 from config import Config
 

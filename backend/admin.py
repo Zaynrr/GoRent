@@ -1,12 +1,11 @@
-import io, os, csv
+import io, csv
 import requests
 from config import Config
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file, make_response
 from sqlalchemy import func, extract
 from backend.model import db, User, Motor, Kategori, Transaksi, Voucher
-from backend.helper import login_required, admin_required, allowed_file, upload_to_cloudinary, delete_from_cloudinary, extract_public_id_from_url, send_invoice_whatsapp
-from werkzeug.security import generate_password_hash
+from backend.helper import login_required, admin_required, allowed_file, upload_to_cloudinary, delete_from_cloudinary, extract_public_id_from_url
 from xhtml2pdf import pisa
 import re
 
@@ -375,7 +374,6 @@ def admin_transaksi():
     page = request.args.get('page', 1, type=int)
     per_page = 5
     filter_type = request.args.get('filter', 'all')
-    voucher_filter = request.args.get('voucher', '').strip()
     
     # Query dengan joinedload untuk relasi voucher
     query = Transaksi.query.options(
@@ -391,12 +389,6 @@ def admin_transaksi():
     elif filter_type == 'cancelled':
         query = query.filter(Transaksi.status_pembayaran == 'cancelled')
     
-    # Filter berdasarkan voucher
-    if voucher_filter == 'with_voucher':
-        query = query.filter(Transaksi.id_voucher != None)
-    elif voucher_filter == 'without_voucher':
-        query = query.filter(Transaksi.id_voucher == None)
-    
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     transactions = pagination.items
     
@@ -409,7 +401,6 @@ def admin_transaksi():
     
     # Stats voucher
     with_voucher_count = Transaksi.query.filter(Transaksi.id_voucher != None).count()
-    without_voucher_count = total_transactions - with_voucher_count
     
     unverified_ktp_count = Transaksi.query.filter_by(status_verifikasi_ktp='Belum Diverifikasi').count()
     
@@ -439,14 +430,12 @@ def admin_transaksi():
         transactions=transactions,
         pagination=pagination,
         filter_type=filter_type,
-        voucher_filter=voucher_filter,
         total_transactions=total_transactions,
         success_count=success_count,
         pending_count=pending_count,
         cancelled_count=cancelled_count,
         rented_count=rented_count,
         with_voucher_count=with_voucher_count,
-        without_voucher_count=without_voucher_count,
         unverified_ktp_count=unverified_ktp_count,
         damaged_count=damaged_count,
         overdue_count=overdue_count,
