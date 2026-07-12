@@ -1071,12 +1071,14 @@ def admin_voucher_add():
         tgl_selesai = datetime.strptime(tgl_selesai_str, '%Y-%m-%dT%H:%M')
         kuota = int(request.form.get('kuota') or 100)
         
+        cek_voucher = Voucher.query.filter(func.lower(Voucher.kode_voucher) == kode.lower()).first()
+        
         # Validasi
         if not kode:
             flash('Kode voucher wajib diisi!', 'danger')
             return redirect(url_for('admin.admin_vouchers'))
         
-        if Voucher.query.filter_by(kode_voucher=kode).first():
+        if cek_voucher:
             flash(f'Kode voucher "{kode}" sudah ada!', 'danger')
             return redirect(url_for('admin.admin_vouchers'))
         
@@ -1128,13 +1130,13 @@ def admin_voucher_edit(id):
         kuota = int(request.form.get('kuota') or 100)
         
         # Cek duplikasi voucher 
-        existing = Voucher.query.filter(
-            Voucher.kode_voucher == kode,
+        cek_voucher = Voucher.query.filter(
+            func.lower(Voucher.kode_voucher) == kode.lower(),
             Voucher.id != id
         ).first()
         
-        if existing:
-            flash(f'Kode voucher "{kode}" sudah digunakan voucher lain!', 'danger')
+        if cek_voucher:
+            flash(f'Kode voucher "{kode}" sudah digunakan!', 'danger')
             return redirect(url_for('admin.admin_vouchers'))
         
         if tgl_selesai <= tgl_mulai:
