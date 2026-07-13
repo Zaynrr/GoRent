@@ -4,7 +4,7 @@ import traceback
 from config import Config
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file, make_response
-from sqlalchemy import func, extract
+from sqlalchemy import and_, func, extract, case
 from backend.model import db, User, Motor, Kategori, Transaksi, Voucher
 from backend.helper import login_required, admin_required, allowed_file, upload_to_cloudinary, delete_from_cloudinary, extract_public_id_from_url
 from xhtml2pdf import pisa
@@ -410,22 +410,26 @@ def admin_transaksi():
     transactions = pagination.items
     
     # Stats
-    total_transactions = Transaksi.query.count()
-    success_count = Transaksi.query.filter_by(status_pembayaran='success').count()
-    pending_count = Transaksi.query.filter_by(status_pembayaran='pending').count()
-    cancelled_count = Transaksi.query.filter_by(status_pembayaran='cancelled').count()
+    stats = db.session.query(
+        func.count(Transaksi.id_transaksi).label('total'),
+        func.sum(case((Transaksi.status_pembayaran == 'success', 1), else_=0)).label('success'),
+        func.sum(case((Transaksi.status_pembayaran == 'pending', 1), else_=0)).label('pending'),
+        func.sum(case((Transaksi.status_pembayaran == 'cancelled', 1), else_=0)).label('cancelled'),
+        func.sum(case((Transaksi.id_voucher.isnot(None), 1), else_=0)).label('with_voucher'),
+        func.sum(case((Transaksi.status_verifikasi_ktp == 'Belum Diverifikasi', 1), else_=0)).label('unverified_ktp'),
+        func.sum(case((and_(Transaksi.kondisi_motor != 'Tidak Ada Kerusakan', Transaksi.kondisi_motor.isnot(None)), 1), else_=0)).label('damaged')
+    ).first()
+
+    # Ekstrak data (jika tidak ada data, gunakan angka 0)
+    total_transactions = stats.total or 0
+    success_count = int(stats.success or 0)
+    pending_count = int(stats.pending or 0)
+    cancelled_count = int(stats.cancelled or 0)
+    with_voucher_count = int(stats.with_voucher or 0)
+    unverified_ktp_count = int(stats.unverified_ktp or 0)
+    damaged_count = int(stats.damaged or 0)
+
     rented_count = Motor.query.filter_by(status_motor='Disewa').count()
-    
-    # Stats voucher
-    with_voucher_count = Transaksi.query.filter(Transaksi.id_voucher != None).count()
-    
-    unverified_ktp_count = Transaksi.query.filter_by(status_verifikasi_ktp='Belum Diverifikasi').count()
-    
-    # Stats kerusakan
-    damaged_count = Transaksi.query.filter(
-        Transaksi.kondisi_motor != 'Tidak Ada Kerusakan', 
-        Transaksi.kondisi_motor.isnot(None)
-    ).count()
     
     today_date = datetime.now().date()
     overdue_list = Transaksi.query.options(
