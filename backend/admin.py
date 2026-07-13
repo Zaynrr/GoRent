@@ -39,7 +39,7 @@ def admin_dashboard():
     
     batas_waktu = today - timedelta(days=29)
 
-    # 2. Ambil data HANYA 1 KALI dengan group_by tanggal
+    # Ambil data
     pendapatan_per_hari = db.session.query(
         func.date(Transaksi.created_at).label('tanggal'),
         func.sum(Transaksi.total_harga).label('total')
@@ -956,7 +956,15 @@ def customer_detail(id):
 @login_required
 @admin_required
 def export_customers():
-    customers = User.query.filter_by(role='customer').order_by(User.id.desc()).all()
+    # Ambil data
+    customers_with_orders = db.session.query(
+        User, 
+        func.count(Transaksi.id_transaksi).label('total_orders')
+    ).outerjoin(
+        Transaksi, User.id == Transaksi.id_customer
+    ).filter(
+        User.role == 'customer'
+    ).group_by(User.id).order_by(User.id.desc()).all()
     
     # Create CSV
     output = io.StringIO()
@@ -966,15 +974,14 @@ def export_customers():
     writer.writerow(['ID', 'Name', 'Email', 'Phone', 'Status', 'Registered Date', 'Total Orders'])
     
     # Data
-    for customer in customers:
-        total_orders = Transaksi.query.filter_by(id_customer=customer.id).count()
+    for customer, total_orders in customers_with_orders:
         writer.writerow([
             customer.id,
             customer.nama,
             customer.email,
             customer.no_hp,
             'Active' if customer.is_active else 'Non-Active',
-            customer.created_at if customer.created_at else '-',
+            customer.created_at.strftime('%Y-%m-%d %H:%M:%S') if customer.created_at else '-',
             total_orders
         ])
     
