@@ -957,7 +957,7 @@ def customer_detail(id):
 @admin_required
 def export_customers():
     # Ambil data
-    customers_with_orders = db.session.query(
+    customers_with_orders = db.sessipon.query(
         User, 
         func.count(Transaksi.id_transaksi).label('total_orders')
     ).outerjoin(
