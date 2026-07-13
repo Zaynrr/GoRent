@@ -37,20 +37,31 @@ def admin_dashboard():
         Transaksi.status_pembayaran == 'success'  
     ).scalar() or 0
     
-    # Data untuk grafik 
+    batas_waktu = today - timedelta(days=29)
+
+    # 2. Ambil data HANYA 1 KALI dengan group_by tanggal
+    pendapatan_per_hari = db.session.query(
+        func.date(Transaksi.created_at).label('tanggal'),
+        func.sum(Transaksi.total_harga).label('total')
+    ).filter(
+        Transaksi.created_at >= batas_waktu,
+        Transaksi.status_pembayaran == 'success'
+    ).group_by(
+        func.date(Transaksi.created_at)
+    ).all()
+
+    # Ubah hasil query menjadi dictionary 
+    data_dict = {str(item.tanggal): item.total or 0 for item in pendapatan_per_hari}
+
     chart_labels = []
     chart_data = []
 
     for i in range(29, -1, -1):
         date = today - timedelta(days=i)
+        date_str = str(date)
+        
         chart_labels.append(date.strftime('%d %b'))
-        
-        daily_income = db.session.query(func.sum(Transaksi.total_harga)).filter(
-            func.date(Transaksi.created_at) == date,
-            Transaksi.status_pembayaran == 'success'  
-        ).scalar() or 0
-        
-        chart_data.append(daily_income)
+        chart_data.append(data_dict.get(date_str, 0))
     
     return render_template(
         'admin/dashboardd.html',
@@ -72,20 +83,27 @@ def dashboard_chart_data():
     days = request.args.get('days', 30, type=int)
     today = datetime.now().date()
     
+    batas_waktu = today - timedelta(days=days - 1)
+    
+    pendapatan_per_hari = db.session.query(
+        func.date(Transaksi.created_at).label('tanggal'),
+        func.sum(Transaksi.total_harga).label('total')
+    ).filter(
+        func.date(Transaksi.created_at) >= batas_waktu,
+        Transaksi.status_pembayaran == 'success'
+    ).group_by(
+        func.date(Transaksi.created_at)
+    ).all()
+
+    data_dict = {str(item.tanggal): item.total or 0 for item in pendapatan_per_hari}
+    
     labels = []
     values = []
     
     for i in range(days - 1, -1, -1):
         date = today - timedelta(days=i)
         labels.append(date.strftime('%d %b'))
-        
-        # Hitung transaksi yang success
-        daily_income = db.session.query(func.sum(Transaksi.total_harga)).filter(
-            func.date(Transaksi.created_at) == date,
-            Transaksi.status_pembayaran == 'success'  
-        ).scalar() or 0
-        
-        values.append(daily_income)
+        values.append(data_dict.get(str(date), 0))
     
     return jsonify({
         'labels': labels,
