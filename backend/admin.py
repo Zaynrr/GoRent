@@ -851,10 +851,16 @@ def admin_customers():
     per_page = 5 
     tipe_filter = request.args.get('filter', 'all')
     
-    user_customer = User.query.filter_by(role='customer')
-    total_semua = user_customer.count()
-    total_active = user_customer.filter_by(is_active=True).count()
-    total_inactive = user_customer.filter_by(is_active=False).count()
+    # Stats
+    stats = db.session.query(
+        func.count(User.id).label('total'),
+        func.sum(case((User.is_active == True, 1), else_=0)).label('active'),
+        func.sum(case((User.is_active == False, 1), else_=0)).label('inactive')
+    ).filter(User.role == 'customer').first()
+
+    total_semua = stats.total or 0
+    total_active = stats.active or 0
+    total_inactive = stats.inactive or 0
     
     # Query untuk total orders
     query = db.session.query(
