@@ -1,5 +1,6 @@
 import io, csv
 import requests
+import traceback
 from config import Config
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file, make_response
@@ -7,7 +8,6 @@ from sqlalchemy import func, extract
 from backend.model import db, User, Motor, Kategori, Transaksi, Voucher
 from backend.helper import login_required, admin_required, allowed_file, upload_to_cloudinary, delete_from_cloudinary, extract_public_id_from_url
 from xhtml2pdf import pisa
-import re
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -329,7 +329,6 @@ def admin_motor_delete(id):
     except Exception as e:
         db.session.rollback()
         print(f"❌ Error delete motor: {str(e)}")
-        import traceback
         traceback.print_exc()
         flash(f'Gagal menghapus motor: {str(e)}', 'danger')
     
@@ -642,7 +641,6 @@ def export_transaksi_pdf():
         )
         
     except Exception as e:
-        import traceback
         traceback.print_exc()
         flash(f'Gagal export PDF: {str(e)}', 'danger')
         return redirect(url_for('admin.admin_transaksi'))
