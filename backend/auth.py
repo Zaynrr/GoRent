@@ -34,7 +34,7 @@ def register():
             return redirect(url_for('auth.register'))
         
         try:
-            password_hash = generate_password_hash(password)
+            password_hash = generate_password_hash(password, method='pbkdf2:sha256')
         
             # Buat user baru
             user_baru = User(
@@ -64,14 +64,14 @@ def login():
         # Mengambil input username dari form
         username = request.form.get('username')
         password = request.form.get('password')
-
-        # Cari user berdasarkan username (kolom 'nama')
-        user = User.query.filter_by(nama=username).first()
         
         # Validasi input kosong
         if not username or not password:
             flash('Username dan password harus diisi.', 'danger')
             return redirect(url_for('auth.login'))
+        
+        # Cari user berdasarkan username (kolom 'nama')
+        user = User.query.filter_by(nama=username).first()
 
         # Cek apakah akun user dinonaktifkan
         if user and check_password_hash(user.password_hash, password):
@@ -166,7 +166,7 @@ def reset_password(token):
             return render_template('reset-password.html', token=token, user=user)
         
         # Update password
-        user.password_hash = generate_password_hash(password)
+        user.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
         user.reset_token = None  
         user.reset_token_expiry = None
         db.session.commit()
