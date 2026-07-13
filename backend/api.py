@@ -273,14 +273,6 @@ def midtrans_notification():
                 'message': 'Transaksi tidak ada didatabase'
             }), 200
 
-        # Skip jika sudah dibatalkan customer
-        # if transaksi.status_pembayaran == 'cancelled':
-        #     return jsonify({'status': 'success'}), 200
-        
-        # # IDEMPOTENCY CHECK
-        # if status_transaksi in ['settlement', 'capture'] and transaksi.status_pembayaran == 'success':
-        #     return jsonify({'status': 'success'}), 200
-
         if expiry_time:
             try:
                 # Potong zona waktu "+0700" atau "-0700" jika dikirim oleh Midtrans
