@@ -3,18 +3,18 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
-# ===== KATEGORI =====
-class Kategori(db.Model):
-    __tablename__ = 'kategori'
+# ===== MERK =====
+class Merk(db.Model):
+    __tablename__ = 'merk'
 
-    id_kategori  = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    nama_kategori = db.Column(db.String(50), nullable=False)
+    id_merk  = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nama_merk = db.Column(db.String(50), nullable=False)
 
     # Relasi ke Motor
-    motors = db.relationship('Motor', backref='kategori', lazy=True)
+    motors = db.relationship('Motor', backref='merk', lazy=True)
 
     def __repr__(self):
-        return f'<Kategori {self.nama_kategori}>'
+        return f'<Merk {self.nama_merk}>'
 
 
 # ===== MOTOR =====
@@ -22,7 +22,7 @@ class Motor(db.Model):
     __tablename__ = 'motor'
 
     id_motor = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    id_kategori = db.Column(db.Integer, db.ForeignKey('kategori.id_kategori'), nullable=True)
+    id_merk = db.Column(db.Integer, db.ForeignKey('merk.id_merk'), nullable=True)
     nama_motor = db.Column(db.String(100), nullable=False)
     transmisi = db.Column(db.Enum('Matic', 'Manual'), nullable=False)
     cc_motor = db.Column(db.Integer, nullable=False)

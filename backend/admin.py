@@ -5,7 +5,7 @@ from config import Config
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file, make_response
 from sqlalchemy import and_, func, extract, case
-from backend.model import db, User, Motor, Kategori, Transaksi, Voucher
+from backend.model import db, User, Motor, Merk, Transaksi, Voucher
 from backend.helper import login_required, admin_required, allowed_file, upload_to_cloudinary, delete_from_cloudinary, extract_public_id_from_url
 from xhtml2pdf import pisa
 
@@ -135,7 +135,7 @@ def admin_motors():
     )
     
     motors = pagination.items
-    kategori = Kategori.query.all()
+    merk = Merk.query.all()
     
     # Stats
     stats = db.session.query(
@@ -157,7 +157,7 @@ def admin_motors():
     return render_template(
         'admin/motors.html', 
         motors=motors,
-        kategori=kategori,
+        merk=merk,
         pagination=pagination,
         filter_type=filter_type,
         total_motors=total_motor,
@@ -211,16 +211,16 @@ def admin_motor_add():
                     flash('Gagal upload gambar ke Cloudinary', 'danger')
                     return redirect(url_for('admin.admin_motors'))
         
-        # Ambil id_kategori dari form
-        id_kategori = request.form.get('id_kategori')
-        if id_kategori == '':
-            id_kategori = None
+        # Ambil id_merk dari form
+        id_merk = request.form.get('id_merk')
+        if id_merk == '':
+            id_merk = None
         else:
-            id_kategori = int(id_kategori)
+            id_merk = int(id_merk)
         
         motor_baru = Motor(
             nama_motor=request.form.get('nama_motor'),
-            id_kategori=id_kategori,
+            id_merk=id_merk,
             transmisi=request.form.get('transmisi'),
             cc_motor=int(request.form.get('cc_motor')),
             harga_sewa=int(request.form.get('harga_sewa')),
@@ -254,8 +254,8 @@ def admin_motor_edit(id):
         # Update data motor
         motor.nama_motor = request.form.get('nama_motor')
         
-        id_kategori = request.form.get('id_kategori')
-        motor.id_kategori = int(id_kategori) if id_kategori else None
+        id_merk = request.form.get('id_merk')
+        motor.id_merk = int(id_merk) if id_merk else None
         
         motor.transmisi = request.form.get('transmisi')
         motor.cc_motor = int(request.form.get('cc_motor'))
@@ -361,34 +361,34 @@ def admin_motor_delete(id):
     
     return redirect(url_for('admin.admin_motors'))
 
-@admin_bp.route('/kategori/add', methods=['POST'])
+@admin_bp.route('/merk/add', methods=['POST'])
 @login_required
 @admin_required
-def admin_kategori_add():
+def admin_merk_add():
     try:
-        nama_kategori = request.form.get('nama_kategori', '').strip()
+        nama_merk = request.form.get('nama_merk', '').strip()
         
-        cek_kategori = Kategori.query.filter(func.lower(Kategori.nama_kategori) == nama_kategori.lower()).first()
+        cek_merk = Merk.query.filter(func.lower(Merk.nama_merk) == nama_merk.lower()).first()
         
         # Validasi
-        if not nama_kategori:
-            flash('Nama kategori wajib diisi!', 'danger')
+        if not nama_merk:
+            flash('Nama merk wajib diisi!', 'danger')
             return redirect(url_for('admin.admin_motors'))
         
-        if cek_kategori:
-            flash(f'Kategori "{nama_kategori}" sudah ada!', 'danger')
+        if cek_merk:
+            flash(f'Merk "{nama_merk}" sudah ada!', 'danger')
             return redirect(url_for('admin.admin_motors'))
         
-        kategori_baru = Kategori(
-            nama_kategori=nama_kategori
+        merk_baru = Merk(
+            nama_merk=nama_merk
         )
         
-        db.session.add(kategori_baru)
+        db.session.add(merk_baru)
         db.session.commit()
         
     except Exception as e:
         db.session.rollback()
-        flash(f'❌ Gagal menambah kategori: {str(e)}', 'danger')
+        flash(f'❌ Gagal menambah merk: {str(e)}', 'danger')
         
     return redirect(url_for('admin.admin_motors'))
 

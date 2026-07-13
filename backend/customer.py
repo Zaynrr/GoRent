@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, session, flash, redirect, url_for
-from backend.model import db, User, Motor, Kategori, Transaksi
+from backend.model import db, User, Motor, Merk, Transaksi
 from backend.helper import login_required
 
 customer_bp = Blueprint('customer', __name__)
@@ -15,12 +15,13 @@ def motors():
     list_motor = Motor.query.filter_by(is_active=True)\
                              .order_by(Motor.id_motor.desc())\
                              .all()
-    kategori = Kategori.query.order_by(Kategori.nama_kategori).all()
-    category = request.args.get('category') 
+    merk_list = Merk.query.order_by(Merk.nama_merk).all()
+    
+    merk_param = request.args.get('merk') 
     return render_template('customers/motors.html',
                            motors=list_motor,
-                           kategori=kategori,
-                           current_category=category)
+                           merk=merk_list,
+                           current_merk=merk_param)
     
 # Halaman Checkout
 @customer_bp.route('/checkout')

@@ -10,7 +10,7 @@
     </div>
     <div style="display: flex; gap: 12px; align-items: center;">
         <button class="btn btn-primary" onclick="openCategoryModal()">
-            <i class="fas fa-tags"></i> Tambah Kategori
+            <i class="fas fa-tags"></i> Tambah Merk
         </button>
         <button class="btn btn-primary" onclick="openAddModal()">
             <i class="fas fa-plus"></i> Tambah Motor Baru
@@ -110,7 +110,7 @@
                 <tr>
                     <th>Gambar</th>
                     <th>Nama Motor</th>
-                    <th>Kategori</th>
+                    <th>Merk</th>
                     <th>CC</th>
                     <th>Transmisi</th>
                     <th>Harga Rental</th>
@@ -121,7 +121,7 @@
             <tbody>
                 {% for motor in motors %}
                 <tr data-name="{{ motor.nama_motor|lower }}" 
-                    data-category="{{ motor.kategori.nama_kategori|lower if motor.kategori else '' }}"
+                    data-category="{{ motor.merk.nama_merk|lower if motor.merk else '' }}"
                     data-transmission="{{ motor.transmisi|lower }}"
                     data-active="{{ motor.is_active }}">
                     <td>
@@ -139,7 +139,7 @@
                             {{ motor.cc_motor }}cc
                         </div>
                     </td>
-                    <td>{{ motor.kategori.nama_kategori if motor.kategori else '-' }}</td>
+                    <td>{{ motor.merk.nama_merk if motor.merk else '-' }}</td>
                     <td>{{ motor.cc_motor }} cc</td>
                     <td>{{ motor.transmisi }}</td>
                     <td><strong>Rp {{ "{:,.0f}".format(motor.harga_sewa) }}</strong>/day</td>
@@ -168,7 +168,7 @@
                                     onclick='openEditModal({
                                         "id_motor": {{ motor.id_motor }},
                                         "nama_motor": "{{ motor.nama_motor|e }}",
-                                        "id_kategori": {{ motor.id_kategori or 'null' }},
+                                        "id_merk": {{ motor.id_merk or 'null' }},
                                         "transmisi": "{{ motor.transmisi }}",
                                         "cc_motor": {{ motor.cc_motor }},
                                         "harga_sewa": {{ motor.harga_sewa }},
@@ -277,11 +277,11 @@
 
             <div class="admin-form-row">
                 <div class="admin-form-group">
-                    <label>Kategori *</label>
-                    <select name="id_kategori" id="id_kategori" required>
-                        <option value="">-- Pilih Kategori --</option>
-                        {% for kategori in kategori %}
-                            <option value="{{ kategori.id_kategori }}">{{ kategori.nama_kategori }}</option>
+                    <label>Merk *</label>
+                    <select name="id_merk" id="id_merk" required>
+                        <option value="">-- Pilih Merk --</option>
+                        {% for merk in merk %}
+                            <option value="{{ merk.id_merk }}">{{ merk.nama_merk }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -350,18 +350,18 @@
 <div id="categoryModal" class="admin-modal">
     <div class="admin-modal-content" style="max-width: 450px;">
         <div class="admin-modal-header">
-            <h2>Tambah Kategori Baru</h2>
+            <h2>Tambah Merk Baru</h2>
         </div>
-        <form id="categoryForm" method="POST" action="{{ url_for('admin.admin_kategori_add') }}">
+        <form id="categoryForm" method="POST" action="{{ url_for('admin.admin_merk_add') }}">
             <div class="admin-form-group">
-                <label>Nama Kategori *</label>
-                <input type="text" name="nama_kategori" required placeholder="e.g., Yamaha, Sport, Trail">
+                <label>Nama Merk *</label>
+                <input type="text" name="nama_merk" required placeholder="e.g., Yamaha, Honda, Suzuki">
             </div>
             
             <div class="admin-modal-actions">
                 <button type="button" class="btn" style="background: var(--bg-secondary); color: var(--text-secondary);" onclick="closeCategoryModal()">Cancel</button>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Simpan Kategori
+                    <i class="fas fa-save"></i> Simpan Merk
                 </button>
             </div>
         </form>
@@ -408,7 +408,7 @@
         
         // Fill form with motor data
         document.getElementById('nama_motor').value = motor.nama_motor;
-        document.getElementById('id_kategori').value = motor.id_kategori || '';
+        document.getElementById('id_merk').value = motor.id_merk || '';
         document.getElementById('transmisi').value = motor.transmisi;
         document.getElementById('cc_motor').value = motor.cc_motor;
         document.getElementById('harga_sewa').value = motor.harga_sewa;
@@ -432,7 +432,7 @@
         document.getElementById('motorModal').classList.remove('active');
     }
 
-    // ===== MODAL FUNCTIONS UNTUK KATEGORI =====
+    // ===== MODAL FUNCTIONS UNTUK MERK =====
     function openCategoryModal() {
         document.getElementById('categoryModal').classList.add('active');
         document.getElementById('categoryForm').reset();
