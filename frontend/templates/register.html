@@ -3,170 +3,201 @@
 {% block title %}Login - GoRent{% endblock %}
 
 {% block content %}
-    <!-- Auth Container -->
-    <section class="auth-section">
-        <div class="container">
-            <div class="auth-wrapper">
-                
-                <!-- Left Side - Illustration -->
-                <div class="auth-illustration">
-                    <div class="auth-illustration-content">
-                        <i class="fas fa-user-plus auth-icon"></i>
-                        <h2>Bergabung dengan GoRent!</h2>
-                        <p>Daftar sekarang dan nikmati kemudahan sewa motor premium dengan berbagai keuntungan eksklusif.</p>
-                        <div class="auth-features">
-                            <div class="auth-feature">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Proses pendaftaran cepat</span>
-                            </div>
-                            <div class="auth-feature">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Diskon 20% untuk member baru</span>
-                            </div>
-                            <div class="auth-feature">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Akses prioritas ke armada terbaru</span>
-                            </div>
+<!-- Auth Container -->
+<section class="auth-section">
+    <div class="container">
+        <div class="auth-wrapper">
+
+            <!-- Left Side - Illustration -->
+            <div class="auth-illustration">
+                <div class="auth-illustration-content">
+                    <i class="fas fa-user-plus auth-icon"></i>
+                    <h2>Bergabung dengan GoRent!</h2>
+                    <p>Daftar sekarang dan nikmati kemudahan sewa motor premium dengan berbagai keuntungan eksklusif.
+                    </p>
+                    <div class="auth-features">
+                        <div class="auth-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Proses pendaftaran cepat</span>
+                        </div>
+                        <div class="auth-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Diskon 20% untuk member baru</span>
+                        </div>
+                        <div class="auth-feature">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Akses prioritas ke armada terbaru</span>
                         </div>
                     </div>
                 </div>
-
-                <!-- Right Side - Register Form -->
-                <div class="auth-form-container">
-                    <div class="auth-form-wrapper">
-                        <div class="auth-header">
-                            <h1>Daftar</h1>
-                            <p>Buat akun GoRent Anda</p>
-                        </div>
-
-                        <!-- Flash Messages -->
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                        {{ message }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
-
-                        <form method="POST" action="/register" class="auth-form">
-                            <div class="form-group">
-                                <label for="nama">
-                                    <i class="fas fa-user"></i> Nama Lengkap
-                                </label>
-                                <input type="text" id="nama" name="nama" placeholder="John Doe" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="email">
-                                    <i class="fas fa-envelope"></i> Email
-                                </label>
-                                <input type="email" id="email" name="email" placeholder="nama@email.com" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="no_hp">
-                                    <i class="fas fa-phone"></i> Nomor Telepon
-                                </label>
-                                <input type="tel" id="no_hp" name="no_hp" placeholder="+62 812-3456-7890" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="password">
-                                    <i class="fas fa-lock"></i> Password
-                                </label>
-                                <div class="password-wrapper">
-                                    <input type="password" id="password" name="password" placeholder="Minimal 6 karakter" required minlength="6">
-                                    <button type="button" class="password-toggle" onclick="togglePassword('password', this)">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
-                                <div class="password-strength" id="passwordStrength"></div>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary btn-auth">
-                                <i class="fas fa-user-plus"></i> Daftar
-                            </button>
-
-                            <div class="auth-footer">
-                                <p>Sudah punya akun? <a href="/login">Masuk di sini</a></p>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
             </div>
+
+            <!-- Right Side - Register Form -->
+            <div class="auth-form-container">
+                <div class="auth-form-wrapper">
+                    <div class="auth-header">
+                        <h1>Daftar</h1>
+                        <p>Buat akun GoRent Anda</p>
+                    </div>
+
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="/register" class="auth-form">
+                        <div class="form-group">
+                            <label for="nama">
+                                <i class="fas fa-user"></i> Nama Lengkap
+                            </label>
+                            <input type="text" id="nama" name="nama" placeholder="John Doe" required
+                                pattern="[a-zA-Z0-9 ]+" title="Hanya huruf, angka, dan spasi yang diperbolehkan">
+                            <div id="namaError"
+                                style="display: none; color: #dc3545; font-size: 0.85em; margin-top: 5px;">
+                                <i class="fas fa-exclamation-circle"></i> Karakter khusus tidak diperbolehkan!
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">
+                                <i class="fas fa-envelope"></i> Email
+                            </label>
+                            <input type="email" id="email" name="email" placeholder="nama@email.com" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="no_hp">
+                                <i class="fas fa-phone"></i> Nomor Telepon
+                            </label>
+                            <input type="tel" id="no_hp" name="no_hp" placeholder="+62 812-3456-7890" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">
+                                <i class="fas fa-lock"></i> Password
+                            </label>
+                            <div class="password-wrapper">
+                                <input type="password" id="password" name="password" placeholder="Minimal 6 karakter"
+                                    required minlength="6">
+                                <button type="button" class="password-toggle"
+                                    onclick="togglePassword('password', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength" id="passwordStrength"></div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-auth">
+                            <i class="fas fa-user-plus"></i> Daftar
+                        </button>
+
+                        <div class="auth-footer">
+                            <p>Sudah punya akun? <a href="/login">Masuk di sini</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
         </div>
-    </section>
+    </div>
+</section>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        function togglePassword(inputId, button) {
-            const input = document.getElementById(inputId);
-            const icon = button.querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.replace('fa-eye', 'fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.replace('fa-eye-slash', 'fa-eye');
+<script>
+    document.getElementById('nama').addEventListener('input', function (e) {
+        const inputField = e.target;
+        const errorDiv = document.getElementById('namaError');
+
+        // Mengecek apakah ada karakter selain huruf, angka, dan spasi
+        const containsSpecialChars = /[^a-zA-Z0-9 ]/.test(inputField.value);
+
+        if (containsSpecialChars) {
+            // Tampilkan pesan error
+            errorDiv.style.display = 'block';
+
+            // (Opsional) Otomatis menghapus karakter khusus yang baru diketik
+            inputField.value = inputField.value.replace(/[^a-zA-Z0-9 ]/g, '');
+
+            // Hilangkan pesan error setelah 3 detik
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 3000);
+        } else {
+            errorDiv.style.display = 'none';
+        }
+    });
+
+    function togglePassword(inputId, button) {
+        const input = document.getElementById(inputId);
+        const icon = button.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    }
+
+    // Auto-hide alert
+    document.addEventListener('DOMContentLoaded', function () {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function (alert) {
+            setTimeout(function () {
+                alert.style.opacity = '0';
+                alert.style.transition = 'opacity 0.3s ease';
+                setTimeout(function () {
+                    alert.remove();
+                }, 300);
+            }, 5000);
+        });
+    });
+
+    // Manual close button
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('btn-close') || e.target.closest('.btn-close')) {
+            const alert = e.target.closest('.alert');
+            if (alert) {
+                alert.style.opacity = '0';
+                alert.style.transition = 'opacity 0.3s ease';
+                setTimeout(function () {
+                    alert.remove();
+                }, 300);
             }
         }
+    });
 
-        // Auto-hide alert
-        document.addEventListener('DOMContentLoaded', function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                setTimeout(function() {
-                    alert.style.opacity = '0';
-                    alert.style.transition = 'opacity 0.3s ease';
-                    setTimeout(function() {
-                        alert.remove();
-                    }, 300);
-                }, 5000);
-            });
-        });
+    // Password strength indicator
+    document.getElementById('password').addEventListener('input', function (e) {
+        const password = e.target.value;
+        const strengthBar = document.getElementById('passwordStrength');
+        let strength = 0;
 
-        // Manual close button
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('btn-close') || e.target.closest('.btn-close')) {
-                const alert = e.target.closest('.alert');
-                if (alert) {
-                    alert.style.opacity = '0';
-                    alert.style.transition = 'opacity 0.3s ease';
-                    setTimeout(function() {
-                        alert.remove();
-                    }, 300);
-                }
-            }
-        });
+        if (password.length >= 8) strength++;
+        if (password.match(/[a-z]/)) strength++;
+        if (password.match(/[A-Z]/)) strength++;
+        if (password.match(/[0-9]/)) strength++;
+        if (password.match(/[^a-zA-Z0-9]/)) strength++;
 
-        // Password strength indicator
-        document.getElementById('password').addEventListener('input', function(e) {
-            const password = e.target.value;
-            const strengthBar = document.getElementById('passwordStrength');
-            let strength = 0;
-            
-            if (password.length >= 8) strength++;
-            if (password.match(/[a-z]/)) strength++;
-            if (password.match(/[A-Z]/)) strength++;
-            if (password.match(/[0-9]/)) strength++;
-            if (password.match(/[^a-zA-Z0-9]/)) strength++;
-            
-            strengthBar.className = 'password-strength';
-            if (strength <= 2) {
-                strengthBar.classList.add('weak');
-                strengthBar.textContent = 'Lemah';
-            } else if (strength <= 3) {
-                strengthBar.classList.add('medium');
-                strengthBar.textContent = 'Sedang';
-            } else {
-                strengthBar.classList.add('strong');
-                strengthBar.textContent = 'Kuat';
-            }
-        });
-    </script>
+        strengthBar.className = 'password-strength';
+        if (strength <= 2) {
+            strengthBar.classList.add('weak');
+            strengthBar.textContent = 'Lemah';
+        } else if (strength <= 3) {
+            strengthBar.classList.add('medium');
+            strengthBar.textContent = 'Sedang';
+        } else {
+            strengthBar.classList.add('strong');
+            strengthBar.textContent = 'Kuat';
+        }
+    });
+</script>
 {% endblock %}

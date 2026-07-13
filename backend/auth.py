@@ -1,3 +1,4 @@
+import re
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
@@ -15,6 +16,10 @@ def register():
         email = request.form.get('email').strip()
         no_hp = request.form.get('no_hp').strip()
         password = request.form.get('password').strip()
+        
+        if not re.match(r'^[a-zA-Z0-9 ]+$', nama):
+            flash('Username hanya boleh berisi huruf dan angka. Karakter khusus seperti @, #, !, dll tidak diperbolehkan.', 'warning')
+            return redirect(url_for('auth.register'))
         
         # Cek apakah Email sudah terdaftar
         email_exist = User.query.filter_by(email=email).first()
