@@ -389,7 +389,7 @@
     // ===== MODAL FUNCTIONS UNTUK MOTOR =====
     function openAddModal() {
         document.getElementById('motorModal').classList.add('active');
-        document.getElementById('modalTitle').textContent = 'Add New Motorcycle';
+        document.getElementById('modalTitle').textContent = 'Tambah Motor Baru';
         document.getElementById('motorForm').action = "{{ url_for('admin.admin_motor_add') }}";
         document.getElementById('motorForm').reset();
         document.getElementById('imagePreviewContainer').style.display = 'none';
@@ -403,7 +403,7 @@
         }
 
         document.getElementById('motorModal').classList.add('active');
-        document.getElementById('modalTitle').textContent = 'Edit Motorcycle';
+        document.getElementById('modalTitle').textContent = 'Edit Motor';
         document.getElementById('motorForm').action = `/admin/motor/edit/${motor.id_motor}`;
         
         // Fill form with motor data
