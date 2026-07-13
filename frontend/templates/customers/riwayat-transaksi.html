@@ -91,7 +91,6 @@
 <section style="padding: 0 0 80px; background: var(--bg-secondary);">
     <div class="container">
         {% if transactions %}
-            <!-- SWIPE HINT - Hanya muncul di mobile -->
             <div class="swipe-hint">
                 <i class="fas fa-arrows-left-right"></i>
                 <span>Geser ke kiri/kanan untuk lihat transaksi lainnya</span>
@@ -259,7 +258,7 @@
                                 </button>
                             {% endif %}
                             
-                            <!-- Tombol Sewa Lagi untuk CANCELLED dan FAILED -->
+                            <!-- Tombol Sewa Lagi  -->
                             {% if t.status_pembayaran in ['cancelled', 'failed'] %}
                                 <a href="/motors" class="btn btn-sm" 
                                 style="background: var(--primary); color: white;">
@@ -480,7 +479,7 @@
 
     // Bayar ulang dari riwayat transaksi
     function payAgain(snapToken) {
-        // Cek jika token kosong/None
+        // Cek jika token kosong
         if (!snapToken || snapToken === 'None' || snapToken === '') {
             alert('❌ Token pembayaran tidak ditemukan. Silakan batalkan pesanan ini dan lakukan pemesanan (checkout) ulang.');
             return;
@@ -502,11 +501,9 @@
         // Buka langsung popup Snap pakai token dari database
         window.snap.pay(snapToken, {
             onSuccess: function(result) {
-                //console.log('✅ Pembayaran berhasil');
                 window.location.href = `/payment-success?order_id=${result.order_id}`;
             },
             onPending: function(result) {
-                //console.log('⏳ Menunggu pembayaran');
                 window.location.href = `/payment-success?order_id=${result.order_id}`;
             },
             onError: function(result) {
@@ -515,7 +512,6 @@
                 btn.innerHTML = originalText;
             },
             onClose: function() {
-                //console.log('⚠️ User menutup popup');
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }

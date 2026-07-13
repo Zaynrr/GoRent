@@ -397,7 +397,6 @@
     }
 
     function openEditModal(motor) {
-        // --- BLOKIR AKSES EDIT JIKA STATUS DISEWA ---
         if (motor.status_motor === 'Disewa') {
             alert(`Akses Ditolak: Motor "${motor.nama_motor}" sedang disewa!\nAnda tidak dapat mengubah data motor ini sampai masa sewa selesai.`);
             return;

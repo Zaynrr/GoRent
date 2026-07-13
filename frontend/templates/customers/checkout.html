@@ -80,7 +80,7 @@
                         </div>
 
                         <p class="terms-text">
-                            By clicking confirm, you agree to our <a href="#">Terms of Service</a>
+                            Dengan mengklik konfirmasi, Anda setuju dengan <a href="#">Syarat dan Ketentuan</a>
                         </p>
                     </form>
                 </div>
@@ -204,13 +204,6 @@
 
             const totalPrice = diffDays * motorPricePerDay;
             currentRentalTotal = totalPrice;
-            
-            // console.log('💰 Harga dihitung:', {
-            //     hargaPerHari: motorPricePerDay,
-            //     jumlahHari: diffDays,
-            //     totalAsli: totalPrice,
-            //     totalTampil: formatRupiah(totalPrice)
-            // });
             
             document.getElementById('rentalPrice').textContent = formatRupiah(totalPrice);
             document.getElementById('totalPrice').textContent = formatRupiah(totalPrice);
@@ -432,14 +425,14 @@
                 ktpUrl: ktpUrl
             };
             
-            if (appliedVoucher.code) {
-                payload.voucher_code = appliedVoucher.code;
-                console.log('🎟️ Voucher dikirim ke backend:', appliedVoucher.code);
-                console.log('💰 Discount:', appliedVoucher.discount);
-                console.log('💵 Final Price:', appliedVoucher.finalPrice);
-            } else {
-                console.log('💳 Pembayaran tanpa voucher');
-            }
+            // if (appliedVoucher.code) {
+            //     payload.voucher_code = appliedVoucher.code;
+            //     console.log('🎟️ Voucher dikirim ke backend:', appliedVoucher.code);
+            //     console.log('💰 Discount:', appliedVoucher.discount);
+            //     console.log('💵 Final Price:', appliedVoucher.finalPrice);
+            // } else {
+            //     console.log('💳 Pembayaran tanpa voucher');
+            // }
             
             const response = await fetch('/api/payment', {
                 method: 'POST',

@@ -634,13 +634,13 @@
         if (newValue === 'Dikembalikan') {
             if (ktpStatus !== 'Verified') {
                 alert('⚠️ KTP BELUM DIVERIFIKASI!\n\nTidak dapat mengubah status menjadi Dikembalikan. Silakan verifikasi KTP customer ini terlebih dahulu.');
-                selectElement.value = oldValue; // Kembalikan ke pilihan 'Disewa'
+                selectElement.value = oldValue; 
                 return;
             }
 
             // Jika KTP sudah terverifikasi, munculkan konfirmasi
             if (!confirm('Tandai motor sudah dikembalikan?\nStatus motor akan berubah menjadi Tersedia dan data Foto KTP akan langsung DIHAPUS dari sistem.')) {
-                selectElement.value = oldValue; // Batalkan jika admin klik Cancel
+                selectElement.value = oldValue; 
                 return;
             }
         }
@@ -716,7 +716,7 @@
         let urlTarget = `/admin/transaksi/send-reminder/${transactionId}`;
         let pesanLoading = '📱 Mengirim reminder...';
 
-        // Jika yang diklik adalah tombol Denda Kerusakan, ubah isinya
+        // Jika yang diklik adalah tombol Denda Kerusakan
         if (jenis === 'damage') {
             pesanKonfirmasi = 'Kirim pesan WhatsApp tagihan denda kerusakan ke customer ini?';
             urlTarget = `/admin/transaksi/send-damage-reminder/${transactionId}`;

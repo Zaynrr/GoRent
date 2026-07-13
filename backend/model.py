@@ -97,11 +97,11 @@ class Voucher(db.Model):
     __tablename__ = 'voucher'
     
     id = db.Column(db.Integer, primary_key=True)
-    kode_voucher = db.Column(db.String(50), unique=True, nullable=False) # Misal: GORENT50
-    tipe_diskon = db.Column(db.String(10), nullable=False) # 'percent' atau 'fixed'
-    nilai_diskon = db.Column(db.Integer, nullable=False) # Misal: 50 (untuk 50% atau Rp 50.000)
-    min_belanja = db.Column(db.Integer, default=0) # Minimal belanja
-    max_diskon = db.Column(db.Integer, nullable=True) # Maksimal diskon (khusus percent)
+    kode_voucher = db.Column(db.String(50), unique=True, nullable=False) 
+    tipe_diskon = db.Column(db.String(10), nullable=False) 
+    nilai_diskon = db.Column(db.Integer, nullable=False) 
+    min_belanja = db.Column(db.Integer, default=0) 
+    max_diskon = db.Column(db.Integer, nullable=True) 
     tgl_mulai = db.Column(db.DateTime, nullable=False)
     tgl_selesai = db.Column(db.DateTime, nullable=False)
     kuota = db.Column(db.Integer, default=100) 

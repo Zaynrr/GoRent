@@ -337,7 +337,6 @@ def send_invoice_email(transaksi, cust_email):
         
         # Kirim email
         email = resend.Emails.send(params)
-        
         return True, email.get('id')
         
     except resend.exceptions.ResendError as e:
@@ -467,12 +466,12 @@ def role_required(allowed_roles):
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # 1. Cek apakah sudah login
+        # Cek apakah sudah login
         if 'user_id' not in session:
             flash('Silakan login terlebih dahulu', 'danger')
             return redirect(url_for('auth.login'))
         
-        # 2. Cek apakah role-nya admin
+        # Cek apakah role-nya admin
         if session.get('user_role') != 'admin':
             flash('Akses ditolak! Halaman ini khusus admin.', 'danger')
             return redirect(url_for('customer.index'))

@@ -68,7 +68,7 @@ def login():
             flash('Username dan password harus diisi.', 'danger')
             return redirect(url_for('auth.login'))
 
-        # Cek apakah user ada dan password cocok
+        # Cek apakah akun user dinonaktifkan
         if user and check_password_hash(user.password_hash, password):
             if not user.is_active:
                 flash('Akun Anda telah dinonaktifkan. Hubungi admin untuk informasi lebih lanjut.', 'danger')
@@ -126,7 +126,6 @@ def forgot_password():
 # Reset password
 @auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
-    # Validasi token
     user = User.query.filter_by(reset_token=token).first()
     
     if not user:
