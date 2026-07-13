@@ -137,13 +137,22 @@ def admin_motors():
     motors = pagination.items
     kategori = Kategori.query.all()
     
-    total_motor = Motor.query.count()
-    jumlah_tersedia = Motor.query.filter_by(status_motor='Tersedia').count()
-    jumlah_disewa = Motor.query.filter_by(status_motor='Disewa').count()
-    jumlah_maintenance = Motor.query.filter_by(status_motor='Maintenance').count()
-    
-    jumlah_active = Motor.query.filter_by(is_active=True).count()
-    jumlah_nonActive = Motor.query.filter_by(is_active=False).count()
+    # Stats
+    stats = db.session.query(
+        func.count(Motor.id_motor).label('total'),
+        func.sum(case((Motor.status_motor == 'Tersedia', 1), else_=0)).label('tersedia'),
+        func.sum(case((Motor.status_motor == 'Disewa', 1), else_=0)).label('disewa'),
+        func.sum(case((Motor.status_motor == 'Maintenance', 1), else_=0)).label('maintenance'),
+        func.sum(case((Motor.is_active == True, 1), else_=0)).label('active'),
+        func.sum(case((Motor.is_active == False, 1), else_=0)).label('nonactive')
+    ).first()
+
+    total_motor=stats.total or 0
+    jumlah_tersedia=stats.tersedia or 0
+    jumlah_disewa=stats.disewa or 0
+    jumlah_maintenance=stats.maintenance or 0
+    jumlah_active=stats.active or 0
+    jumlah_nonActive=stats.nonactive or 0
     
     return render_template(
         'admin/motors.html', 
