@@ -293,7 +293,13 @@ def midtrans_notification():
             transaksi.status_rental = 'Disewa'
         elif status_transaksi == 'pending':
             transaksi.status_pembayaran = 'pending'
-        elif status_transaksi in ['deny', 'failure', 'expire', 'cancel']:
+        elif status_transaksi == 'cancel':
+            transaksi.status_pembayaran = 'cancelled'
+            transaksi.status_rental = 'Dikembalikan'
+        elif status_transaksi == 'expire':
+            transaksi.status_pembayaran = 'expired'
+            transaksi.status_rental = 'Dikembalikan'
+        elif status_transaksi in ['deny', 'failure']:
             transaksi.status_pembayaran = 'failed'
             transaksi.status_rental = 'Dikembalikan'
             
