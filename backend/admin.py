@@ -1017,43 +1017,26 @@ def admin_vouchers():
     
     waktu_skrng = datetime.now()
 
-    total_vouchers = Voucher.query.count()
-    
-    # Aktif dalam periode, kuota belum habis
-    total_aktif = Voucher.query.filter(
-        Voucher.is_active == True,
-        Voucher.tgl_mulai <= waktu_skrng,
-        Voucher.tgl_selesai >= waktu_skrng,
-        Voucher.total_pakai < Voucher.kuota
-    ).count()
-    
-    # Non-Aktif
-    total_nonaktif = Voucher.query.filter_by(is_active=False).count()
-    
-    # Expired
-    total_expired = Voucher.query.filter(
-        Voucher.is_active == True,
-        Voucher.tgl_selesai < waktu_skrng
-    ).count()
-    
-    # Belum Aktif
-    total_belumAktif = Voucher.query.filter(
-        Voucher.is_active == True,
-        Voucher.tgl_mulai > waktu_skrng
-    ).count()
-    
-    # Kuota Habis
-    total_habis = Voucher.query.filter(
-        Voucher.is_active == True,
-        Voucher.total_pakai >= Voucher.kuota,
-        Voucher.tgl_mulai <= waktu_skrng,
-        Voucher.tgl_selesai >= waktu_skrng
-    ).count()
-    
-    total_used = db.session.query(db.func.sum(Voucher.total_pakai)).scalar() or 0
+    # Stats
+    stats = db.session.query(
+        func.count(Voucher.id).label('total'),
+        func.sum(case((and_(Voucher.is_active == True, Voucher.tgl_mulai <= waktu_skrng, Voucher.tgl_selesai >= waktu_skrng, Voucher.total_pakai < Voucher.kuota), 1), else_=0)).label('aktif'),
+        func.sum(case((Voucher.is_active == False, 1), else_=0)).label('nonaktif'),
+        func.sum(case((and_(Voucher.is_active == True, Voucher.tgl_selesai < waktu_skrng), 1), else_=0)).label('expired'),
+        func.sum(case((and_(Voucher.is_active == True, Voucher.tgl_mulai > waktu_skrng), 1), else_=0)).label('belum_aktif'),
+        func.sum(case((and_(Voucher.is_active == True, Voucher.total_pakai >= Voucher.kuota, Voucher.tgl_mulai <= waktu_skrng, Voucher.tgl_selesai >= waktu_skrng), 1), else_=0)).label('habis'),
+        func.sum(Voucher.total_pakai).label('total_used')
+    ).first()
+
+    total_vouchers = stats.total or 0
+    total_aktif = stats.aktif or 0
+    total_nonaktif = stats.nonaktif or 0
+    total_expired = stats.expired or 0
+    total_belumAktif = stats.belum_aktif or 0
+    total_habis = stats.habis or 0
+    total_used = stats.total_used or 0
     
     query = Voucher.query
-    
     if filter_type == 'active':
         query = query.filter(
             Voucher.is_active == True,
