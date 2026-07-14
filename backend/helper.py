@@ -1,3 +1,5 @@
+import traceback
+
 import requests
 import cloudinary
 import cloudinary.uploader
@@ -104,30 +106,30 @@ def extract_public_id_from_url(url):
 # Kirim WA Otomatis
 def send_invoice_whatsapp(transaksi, hp_cust):
     api_key = Config.FONNTE_API_KEY
+
+    lokasi_pengambilan = "Jl. Diponegoro No.rt 02, Sidorejo Lor, Sidorejo, Salatiga City, Central Java 50714"
+    link_gmaps = "https://share.google/SajzkeutDFzmfoC2V"
     
     try:
+        waktu_transaksi = transaksi.created_at.strftime('%d %B %Y, %H:%M WIB') if hasattr(transaksi, 'created_at') and transaksi.created_at else '-'
         tgl_sewa = transaksi.tgl_sewa.strftime('%d %B %Y') if transaksi.tgl_sewa else '-'
         tgl_kembali = transaksi.tgl_kembali.strftime('%d %B %Y') if transaksi.tgl_kembali else '-'
+        
         total_harga = f"Rp {transaksi.total_harga:,.0f}".replace(',', '.')
         nama_motor = transaksi.motor.nama_motor if transaksi.motor else 'Motor'
         nama_cust = transaksi.nama_cust or 'Customer'
         
-        kode_voucher = None
-        if transaksi.voucher:
-            kode_voucher = transaksi.voucher.kode_voucher
-        
+        kode_voucher = transaksi.voucher.kode_voucher if transaksi.voucher else None
         nominal_diskon = transaksi.nominal_diskon or 0
         
         if nominal_diskon > 0:
             harga_asli = transaksi.total_harga + nominal_diskon
-            
             if kode_voucher:
                 payment_section = f"""💰 *Pembayaran:*
 • Subtotal: Rp {harga_asli:,.0f}
 • Voucher: {kode_voucher} (- Rp {nominal_diskon:,.0f})
 • *Total: {total_harga}*"""
             else:
-
                 payment_section = f"""💰 *Pembayaran:*
 • Subtotal: Rp {harga_asli:,.0f}
 • Diskon Promo: - Rp {nominal_diskon:,.0f}
@@ -139,10 +141,11 @@ def send_invoice_whatsapp(transaksi, hp_cust):
         message = f"""🏍️ *INVOICE - GORENT*
 
 Halo *{nama_cust}* 👋
-Terima kasih sudah sewa motor! ✅
+Terima kasih sudah memesan sewa motor di GoRent! ✅
 
 📋 *Detail Pesanan:*
 • Order ID: {transaksi.order_id}
+• Waktu Transaksi: {waktu_transaksi}
 • Motor: {nama_motor}
 • Sewa: {tgl_sewa}
 • Kembali: {tgl_kembali}
@@ -150,14 +153,17 @@ Terima kasih sudah sewa motor! ✅
 
 {payment_section}
 
-📍 *Pengambilan:*
-Tunjukkan Order ID & bawa KTP asli
+📍 *Lokasi Pengambilan Motor:*
+{lokasi_pengambilan}
+Google Maps: {link_gmaps}
 
-Selamat berkendara! 🏍️"""
+📌 *Catatan Pengambilan:*
+Tunjukkan Order ID & bawa KTP asli Anda saat mengambil motor.
+
+Selamat berkendara dan hati-hati di jalan! 🏍️"""
         
         url = "https://api.fonnte.com/send"
         
-        # FORMAT NOMOR HP
         phone = ''.join(filter(str.isdigit, hp_cust))
         if phone.startswith('0'):
             phone = '62' + phone[1:]
@@ -190,28 +196,29 @@ Selamat berkendara! 🏍️"""
             return False, reason
             
     except Exception as e:
-        # print(f"❌ WhatsApp error: {str(e)}")
-        import traceback
         traceback.print_exc()
         return False, str(e)
-    
+
+
 # Kirim Email Otomatis
 def send_invoice_email(transaksi, cust_email):
     api_key = Config.RESEND_API_KEY
+    
+    lokasi_pengambilan = "Jl. Diponegoro No.rt 02, Sidorejo Lor, Sidorejo, Salatiga City, Central Java 50714"
+    link_gmaps = "https://share.google/SajzkeutDFzmfoC2V"
 
     try:
         resend.api_key = api_key
         
         nama_cust = transaksi.nama_cust or 'Customer'
         nama_motor = transaksi.motor.nama_motor if transaksi.motor else 'Motor'
+        
+        waktu_transaksi = transaksi.created_at.strftime('%d %B %Y, %H:%M WIB') if hasattr(transaksi, 'created_at') and transaksi.created_at else '-'
         tgl_sewa = transaksi.tgl_sewa.strftime('%d %B %Y') if transaksi.tgl_sewa else '-'
         tgl_kembali = transaksi.tgl_kembali.strftime('%d %B %Y') if transaksi.tgl_kembali else '-'
         total_hari = transaksi.total_hari or 0
         
-        kode_voucher = None
-        if transaksi.voucher:
-            kode_voucher = transaksi.voucher.kode_voucher
-        
+        kode_voucher = transaksi.voucher.kode_voucher if transaksi.voucher else None
         nominal_diskon = transaksi.nominal_diskon or 0
         harga_final = transaksi.total_harga
         harga_asli = harga_final + nominal_diskon
@@ -235,7 +242,6 @@ def send_invoice_email(transaksi, cust_email):
             <td style="padding: 8px 0; font-weight: 600; text-align: right; {subtotal}">Rp {harga_asli:,.0f}</td>
         </tr>"""
         
-        # Send email via Resend
         params = {
             "from": "GoRent <onboarding@resend.dev>",
             "to": [cust_email],
@@ -265,6 +271,10 @@ def send_invoice_email(transaksi, cust_email):
                     <div style="background-color: #f9f9f9; padding: 20px; margin: 20px 0; border-radius: 8px; border: 1px solid #e5e5e5;">
                         <h3 style="margin: 0 0 16px 0; color: #1a1a1a; font-size: 16px;">📋 Detail Pemesanan</h3>
                         <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #757575; font-size: 14px;">Waktu Transaksi</td>
+                                <td style="padding: 8px 0; color: #1a1a1a; font-weight: 600; text-align: right;">{waktu_transaksi}</td>
+                            </tr>
                             <tr>
                                 <td style="padding: 8px 0; color: #757575; font-size: 14px;">Motor</td>
                                 <td style="padding: 8px 0; color: #1a1a1a; font-weight: 600; text-align: right;">{nama_motor}</td>
@@ -308,10 +318,16 @@ def send_invoice_email(transaksi, cust_email):
                     </div>
                     
                     <!-- Info Pengambilan -->
-                    <div style="background: #e3f2fd; padding: 16px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1976d2;">
-                        <h4 style="margin: 0 0 8px 0; color: #1565c0; font-size: 14px;">📍 Pengambilan Motor</h4>
+                    <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1976d2;">
+                        <h4 style="margin: 0 0 12px 0; color: #1565c0; font-size: 16px;">📍 Lokasi & Pengambilan Motor</h4>
+                        
+                        <div style="background: #ffffff; padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #bbdefb;">
+                            <p style="margin: 0 0 8px 0; color: #1a1a1a; font-size: 14px; font-weight: 600;">{lokasi_pengambilan}</p>
+                            <a href="{link_gmaps}" style="display: inline-block; background: #1976d2; color: white; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">🗺️ Buka di Google Maps</a>
+                        </div>
+
                         <ul style="margin: 0; padding-left: 20px; color: #1565c0; font-size: 14px;">
-                            <li>Tunjukkan <strong>Order ID</strong> di atas saat pengambilan motor</li>
+                            <li style="margin-bottom: 4px;">Tunjukkan <strong>Order ID</strong> di atas saat pengambilan motor</li>
                             <li>Bawa <strong>KTP asli</strong> yang digunakan saat pemesanan</li>
                         </ul>
                     </div>
@@ -335,16 +351,12 @@ def send_invoice_email(transaksi, cust_email):
             """
         }
         
-        # Kirim email
         email = resend.Emails.send(params)
         return True, email.get('id')
         
     except resend.exceptions.ResendError as e:
-        # print(f"❌ Resend API Error: {str(e)}")
         return False, str(e)
     except Exception as e:
-        # print(f"❌ Failed to send email: {str(e)}")
-        import traceback
         traceback.print_exc()
         return False, str(e)
 

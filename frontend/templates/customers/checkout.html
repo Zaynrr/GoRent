@@ -478,7 +478,6 @@
                     btnText.innerHTML = 'Bayar Sekarang';
                 },
                 onClose: function() {
-                    // Ubah teks tombol jadi loading sebentar
                     btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membatalkan sesi...';
                     
                     fetch(`/api/cancel-transaction/${orderId}`, {

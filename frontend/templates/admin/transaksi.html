@@ -530,7 +530,6 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Di dalam loop overdue_list -->
                         {% for overdue in overdue_list %}
                         <tr style="border-bottom: 1px solid var(--border-color);">
                             <td style="padding: 12px; font-family: 'Courier New', monospace; font-size: 12px; color: var(--primary);">
@@ -648,7 +647,6 @@
                 return;
             }
 
-            // Jika KTP sudah terverifikasi, munculkan konfirmasi
             if (!confirm('Tandai motor sudah dikembalikan?\nStatus motor akan berubah menjadi Tersedia dan data Foto KTP akan langsung DIHAPUS dari sistem.')) {
                 selectElement.value = oldValue; 
                 return;
@@ -683,7 +681,7 @@
                     'status_verifikasi_ktp'
                 ];
                 
-                // Jika field yang diubah ada di dalam daftar di atas, maka refresh halaman
+                // refresh halaman
                 if (fieldsToRefresh.includes(field)) {
                     setTimeout(() => {
                         location.reload();
@@ -710,7 +708,6 @@
                 dendaInput.disabled = true;
                 dendaInput.value = 0;
                 
-                // Otomatis update ke database bahwa denda direset jadi 0
                 updateTransaction(transactionId, 'denda_kerusakan', 0);
             } else {
                 dendaInput.disabled = false;
@@ -721,7 +718,6 @@
     
     // ===== SEND REMINDER WA (GABUNGAN) =====
     function sendReminder(transactionId, jenis = 'return') {
-        // Siapkan variabel bawaan (untuk pengembalian motor)
         let pesanKonfirmasi = 'Kirim reminder WhatsApp ke customer?';
         let urlTarget = `/admin/transaksi/send-reminder/${transactionId}`;
         let pesanLoading = '📱 Mengirim reminder...';

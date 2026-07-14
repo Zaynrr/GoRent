@@ -274,7 +274,6 @@
                 <label>Nama Motor *</label>
                 <input type="text" name="nama_motor" id="nama_motor" required placeholder="e.g., Honda Beat FI">
             </div>
-
             <div class="admin-form-row">
                 <div class="admin-form-group">
                     <label>Merk *</label>
@@ -406,7 +405,7 @@
         document.getElementById('modalTitle').textContent = 'Edit Motor';
         document.getElementById('motorForm').action = `/admin/motor/edit/${motor.id_motor}`;
         
-        // Fill form with motor data
+        // form  motor data
         document.getElementById('nama_motor').value = motor.nama_motor;
         document.getElementById('id_merk').value = motor.id_merk || '';
         document.getElementById('transmisi').value = motor.transmisi;
@@ -432,7 +431,7 @@
         document.getElementById('motorModal').classList.remove('active');
     }
 
-    // ===== MODAL FUNCTIONS UNTUK MERK =====
+    // ===== FUNCTIONS UNTUK MERK =====
     function openCategoryModal() {
         document.getElementById('categoryModal').classList.add('active');
         document.getElementById('categoryForm').reset();
@@ -513,14 +512,14 @@
         window.location.href = `{{ url_for('admin.admin_motors') }}?filter=${filterType}&page=1`;
     }
 
-    // Close modals when clicking outside
+    // Tutup ketika klik di luar 
     window.onclick = function(event) {
         if (event.target.id === 'motorModal') closeModal();
         if (event.target.id === 'categoryModal') closeCategoryModal();
         if (event.target.id === 'imagePreviewModal') closeImagePreview();
     }
 
-    // ESC key to close modals
+    // Tutup pakai esc
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeModal();

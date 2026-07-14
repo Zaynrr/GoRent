@@ -399,12 +399,4 @@
     };
 })();
 </script>
-
-<script>
-    window.setTransactionData({
-        orderId: "{{ transaksi.order_id|e }}",
-        createdAt: "{{ transaksi.created_at.strftime('%Y-%m-%d %H:%M:%S') if transaksi.created_at else '' }}",
-        status: "{{ transaksi.status_pembayaran }}"
-    });
-</script>
 {% endblock %}
