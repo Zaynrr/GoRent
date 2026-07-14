@@ -295,16 +295,6 @@
         status: ''
     };
     
-    // EXPOSE ke window agar bisa dipanggil di bawah
-    window.setTransactionData = function(data) {
-        transactionData = data;
-        
-        // Auto-init countdown jika status pending
-        if (data.status === 'pending' && data.createdAt) {
-            initCountdownTimer();
-        }
-    };
-    
     // BAYAR ULANG
     window.payAgain = function(snapToken) {
         // Cek jika token kosong

@@ -3,7 +3,7 @@
 {% block title %}Riwayat Transaksi - GoRent{% endblock %}
 
 {% block head_extra %}
-    <!-- Snap.js Midtrans (WAJIB di-load sebelum script inline) -->
+    <!-- Snap.js Midtrans -->
     <script
         type="text/javascript"
         src="https://app.sandbox.midtrans.com/snap/snap.js"
@@ -20,7 +20,7 @@
     </div>
 </section>
 
-<!-- Stats Summary -->
+<!-- Stats -->
 <section style="padding: 0 0 40px; background: var(--bg-secondary);">
     <div class="container">
         <div class="stats-grid">
@@ -64,7 +64,7 @@
     </div>
 </section>
 
-<!-- Filter Tabs -->
+<!-- Filter -->
 <section style="padding: 40px 0 20px; background: var(--bg-secondary);">
     <div class="container">
         <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;">
@@ -87,7 +87,7 @@
     </div>
 </section>
 
-<!-- Transactions List -->
+<!-- Transaksi  -->
 <section style="padding: 0 0 80px; background: var(--bg-secondary);">
     <div class="container">
         {% if transactions %}
@@ -95,8 +95,6 @@
                 <i class="fas fa-arrows-left-right"></i>
                 <span>Geser ke kiri/kanan untuk lihat transaksi lainnya</span>
             </div>
-            
-            <!-- CONTAINER CARDS -->
             <div class="history-cards-container" id="historyCards">
                 {% for t in transactions %}
                 <div class="history-card" 
@@ -104,7 +102,6 @@
                      data-payment="{{ t.status_pembayaran }}"
                      data-index="{{ loop.index0 }}">
                     
-                    <!-- Card Header -->
                     <div class="history-card-header">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <div style="width: 40px; height: 40px; background: rgba(255, 87, 34, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
@@ -114,6 +111,9 @@
                                 <div style="font-size: 12px; color: var(--text-muted);">Order ID</div>
                                 <div style="font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; color: var(--primary);">
                                     {{ t.order_id }}
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                                    <i class="fas fa-calendar-plus"></i> {{ t.created_at.strftime('%d %b %Y, %H:%M') if t.created_at else '-' }}
                                 </div>
                             </div>
                         </div>
@@ -153,8 +153,6 @@
                             {% endif %}
                         </div>
                     </div>
-                    
-                    <!-- Card Body -->
                     <div class="history-card-body">
                         <!-- Motor Info -->
                         <div class="history-motor-info">
@@ -173,8 +171,6 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Rental Details -->
                         <div class="history-details-grid">
                             <div class="history-detail-item">
                                 <div class="history-detail-label">
@@ -245,7 +241,7 @@
                                 <i class="fas fa-eye"></i> Detail
                             </button>
                             
-                            <!-- Tombol Bayar & Batal HANYA untuk PENDING -->
+                            <!-- Tombol Bayar & Batal -->
                             {% if t.status_pembayaran == 'pending' %}
                                 <button class="btn btn-sm btn-primary" 
                                         onclick="payAgain('{{ t.snap_token }}')">
@@ -271,7 +267,6 @@
                 {% endfor %}
             </div>
         {% else %}
-            <!-- Empty State -->
             <div style="text-align: center; padding: 80px 20px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color);">
                 <div style="width: 100px; height: 100px; background: rgba(255, 87, 34, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
                     <i class="fas fa-receipt" style="font-size: 48px; color: var(--primary);"></i>
@@ -290,7 +285,7 @@
     </div>
 </section>
 
-<!-- Modal Detail Transaksi -->
+<!-- Detail Transaksi -->
 <div id="detailModal" class="motor-popup-overlay" onclick="closeDetailModal()">
     <div class="motor-popup-content" 
          style="max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; text-align: left;" 
@@ -318,11 +313,12 @@
 
 {% block scripts %}
 <script>
-    // Data transaksi untuk modal detail
+    // Data transaksi untuk detail
     const transactionsData = {
         {% for t in transactions %}
         "{{ t.id_transaksi }}": {
             orderId: "{{ t.order_id|e }}",
+            createdAt: "{{ t.created_at.strftime('%d %B %Y, %H:%M WIB') if t.created_at else '-' }}",
             motor: "{{ t.motor.nama_motor|e }}",
             customer: "{{ t.customer.nama|e }}",
             email: "{{ t.customer.email|e }}",
@@ -346,7 +342,7 @@
         {% endfor %}
     };
     
-    // Filter history
+    // Filter 
     function filterHistory(type, btn) {
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.classList.remove('active');
@@ -374,7 +370,7 @@
         });
     }
     
-    // View transaction detail
+    // transaction detail
     function viewTransactionDetail(id) {
         const data = transactionsData[id];
         if (!data) return;
@@ -393,9 +389,7 @@
         }
         
         let voucherSection = '';
-        
         if (data.voucherCode) {
-            // Ada voucher - tampilkan subtotal, voucher badge, dan diskon
             voucherSection = `
                 <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
                     <strong style="color: var(--text-muted); font-size: 13px;">Subtotal:</strong>
@@ -411,7 +405,6 @@
                 </div>
             `;
         } else {
-            // Tidak ada voucher - tampilkan "-"
             voucherSection = `
                 <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
                     <strong style="color: var(--text-muted); font-size: 13px;">🎟️ Voucher:</strong>
@@ -422,9 +415,14 @@
         
         const html = `
             <div style="display: grid; gap: 12px;">
+                ${pendingAlert}
                 <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
                     <strong style="color: var(--text-muted); font-size: 13px;">Order ID:</strong>
                     <span style="font-family: 'Courier New', monospace; font-size: 13px; color: var(--primary); font-weight: 700;">${data.orderId}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
+                    <strong style="color: var(--text-muted); font-size: 13px;">Dibuat Pada:</strong>
+                    <span>${data.createdAt}</span>
                 </div>
                 <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
                     <strong style="color: var(--text-muted); font-size: 13px;">Motor:</strong>
@@ -470,7 +468,7 @@
         document.body.style.overflow = '';
     }
     
-    // Close modal with ESC
+    // Close dgn ESC
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeDetailModal();
@@ -479,7 +477,6 @@
 
     // Bayar ulang dari riwayat transaksi
     function payAgain(snapToken) {
-        // Cek jika token kosong
         if (!snapToken || snapToken === 'None' || snapToken === '') {
             alert('❌ Token pembayaran tidak ditemukan. Silakan batalkan pesanan ini dan lakukan pemesanan (checkout) ulang.');
             return;
@@ -490,7 +487,6 @@
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
         
-        // Cek apakah library snap JS dari Midtrans sudah berhasil dimuat
         if (typeof window.snap === 'undefined') {
             alert('❌ Menunggu koneksi ke sistem pembayaran. Silakan tunggu sebentar atau refresh halaman.');
             btn.disabled = false;
@@ -498,7 +494,6 @@
             return;
         }
         
-        // Buka langsung popup Snap pakai token dari database
         window.snap.pay(snapToken, {
             onSuccess: function(result) {
                 window.location.href = `/payment-success?order_id=${result.order_id}`;
@@ -518,7 +513,6 @@
         });
     }
     
-
     // Cancel transaksi dari riwayat transaksi
     function cancelTransaction(orderId) {
         if (!confirm('⚠️ PERHATIAN!\n\n' +
@@ -556,46 +550,20 @@
             btn.disabled = false;
             btn.innerHTML = originalText;
         });
-
-        // Indikator halaman  (Mobile Swipe)
-        (function() {
-            const container = document.getElementById('historyCards');
-            const indicator = document.getElementById('pageIndicator');
-            
-            if (!container || !indicator) return;
-            
-            const cards = container.querySelectorAll('.history-card');
-            const dots = indicator.querySelectorAll('.page-dot');
-            
-            if (cards.length === 0 || dots.length === 0) return;
-            
-            // Update active dot saat scroll
-            container.addEventListener('scroll', function() {
-                const scrollLeft = container.scrollLeft;
-                const cardWidth = cards[0].offsetWidth + 16; // width + gap
-                const activeIndex = Math.round(scrollLeft / cardWidth);
-                
-                dots.forEach((dot, index) => {
-                    if (index === activeIndex) {
-                        dot.classList.add('active');
-                    } else {
-                        dot.classList.remove('active');
-                    }
-                });
-            });
-            
-            // Sembunyikan swipe hint setelah 5 detik
-            const swipeHint = document.querySelector('.swipe-hint');
-            if (swipeHint) {
-                setTimeout(() => {
-                    swipeHint.style.transition = 'opacity 0.5s';
-                    swipeHint.style.opacity = '0';
-                    setTimeout(() => {
-                        swipeHint.style.display = 'none';
-                    }, 500);
-                }, 5000);
-            }
-        })();
     }
+
+    // Auto-hide Swipe Hint
+    document.addEventListener("DOMContentLoaded", function() {
+        const swipeHint = document.querySelector('.swipe-hint');
+        if (swipeHint) {
+            setTimeout(() => {
+                swipeHint.style.transition = 'opacity 0.5s';
+                swipeHint.style.opacity = '0';
+                setTimeout(() => {
+                    swipeHint.style.display = 'none';
+                }, 500);
+            }, 5000);
+        }
+    });
 </script>
 {% endblock %}
