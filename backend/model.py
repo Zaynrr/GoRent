@@ -83,7 +83,7 @@ class Transaksi(db.Model):
     status_verifikasi_ktp = db.Column(db.Enum('Belum Diverifikasi', 'Verified'), nullable=True, default='Belum Diverifikasi')
     KTP = db.Column(db.String(255), nullable=False)
     nominal_diskon = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, nullable=True, default=datetime.now())
+    created_at = db.Column(db.DateTime, nullable=True, default=datetime.now)
     snap_token = db.Column(db.String(255), nullable=True)
     waktu_expired = db.Column(db.DateTime, nullable=True)
     status_pembayaran_denda = db.Column(db.String(20), default='Tidak Ada Denda')

@@ -251,13 +251,12 @@ def midtrans_notification():
         status_transaksi = data.get('transaction_status')
         tipe_pembayaran = data.get('payment_type')
         fraud_status = data.get('fraud_status')
-        status_code = data.get('status_code')
-        gross_amount = data.get('gross_amount')
         
         cust_detail = data.get('customer_details', {})
         cust_email = cust_detail.get('email', '')
         
         expiry_time = data.get('expiry_time')
+        transaction_time = data.get('transaction_time')
         
         transaksi = Transaksi.query.options(
             db.joinedload(Transaksi.voucher),  
@@ -280,6 +279,13 @@ def midtrans_notification():
                 transaksi.waktu_expired = datetime.strptime(clean_expiry, '%Y-%m-%d %H:%M:%S')
             except ValueError as ve:
                 flash(f"⚠️ Format string waktu expired tidak sesuai: {ve}", 'warning')
+        
+        if transaction_time:
+            try:
+                clean_transaction_time = transaction_time.split(' +')[0].split(' -')[0]
+                transaksi.created_at = datetime.strptime(clean_transaction_time, '%Y-%m-%d %H:%M:%S')
+            except ValueError as ve:
+                print(f"⚠️ Format string waktu transaksi tidak sesuai: {ve}")
         
         # Process berdasarkan status
         if status_transaksi == 'capture':
