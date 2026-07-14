@@ -2636,6 +2636,237 @@ main {
     border-top: 1px solid var(--border-color);
 }
 
+/* Transaksi Report */
+@page {
+    size: A4 landscape;
+    margin: 1.5cm;
+}
+
+.report-page {
+    font-family: Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    font-size: 10px;
+    line-height: 1.4;
+    background-color: #ffffff; 
+    margin: 0;
+    padding: 0;
+}
+
+.report-page .header {
+    text-align: center;
+    padding-bottom: 15px;
+    border-bottom: 3px solid #ff5722;
+    margin-bottom: 20px;
+}
+
+.report-page .header h1 {
+    color: #ff5722;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0 0 5px 0;
+}
+
+.report-page .header p {
+    color: #757575;
+    font-size: 10px;
+    margin: 2px 0;
+}
+
+.report-page .summary-title {
+    color: #ff5722;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 15px 0 8px 0;
+    padding-bottom: 3px;
+    border-bottom: 2px solid #ffe0b2;
+}
+
+.report-page .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+
+.report-page .summary-table td {
+    width: 25%;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #e5e5e5;
+    vertical-align: middle;
+}
+
+.report-page .card-blue { background-color: #e3f2fd; }
+.report-page .card-green { background-color: #e8f5e9; }
+.report-page .card-orange { background-color: #fff3e0; }
+.report-page .card-red { background-color: #ffebee; }
+
+.report-page .card-label {
+    font-size: 8px;
+    color: #757575;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+.report-page .card-value {
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 2px;
+}
+
+.report-page .card-value.text-lg { font-size: 14px; }
+.report-page .card-value.text-md { font-size: 12px; }
+
+.report-page .card-blue .card-value { color: #1976d2; }
+.report-page .card-green .card-value { color: #2e7d32; }
+.report-page .card-orange .card-value { color: #ef6c00; }
+.report-page .card-red .card-value { color: #c62828; }
+
+.report-page .filter-info {
+    background-color: #f5f5f7;
+    padding: 6px 10px;
+    margin-bottom: 15px;
+    font-size: 9px;
+    color: #4a4a4a;
+    border: 1px solid #e5e5e5;
+}
+
+.report-page .table-title {
+    color: #ff5722;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 15px 0 8px 0;
+    padding-bottom: 3px;
+    border-bottom: 2px solid #ffe0b2;
+}
+
+.report-page table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+}
+
+.report-page table.data-table thead tr {
+    background-color: #ff5722;
+    color: white;
+}
+
+.report-page table.data-table th {
+    padding: 8px 4px;
+    text-align: left;
+    font-weight: bold;
+    font-size: 8px;
+    text-transform: uppercase;
+    border: 1px solid #e64a19;
+}
+
+.report-page table.data-table td {
+    padding: 6px 4px;
+    border: 1px solid #e5e5e5;
+    vertical-align: top;
+}
+
+.report-page .overdue-row td {
+    background-color: #ffebee;
+}
+
+.report-page .order-id {
+    font-family: Courier, monospace;
+    font-size: 7px;
+    color: #ff5722;
+    font-weight: bold;
+}
+
+.report-page .overdue-badge {
+    background-color: #d32f2f;
+    color: white;
+    padding: 1px 4px;
+    font-size: 6px;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 2px;
+}
+
+.report-page .customer-name {
+    font-weight: bold;
+    color: #1a1a1a;
+    font-size: 9px;
+}
+
+.report-page .customer-email {
+    font-size: 7px;
+    color: #757575;
+}
+
+.report-page .motor-name {
+    font-weight: bold;
+    font-size: 9px;
+}
+
+.report-page .motor-specs {
+    font-size: 7px;
+    color: #757575;
+}
+
+.report-page .price {
+    font-weight: bold;
+    color: #ff5722;
+    font-size: 9px;
+}
+
+.report-page .status-success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    padding: 2px 5px;
+    font-weight: bold;
+    font-size: 7px;
+}
+
+.report-page .status-pending {
+    background-color: #fff3e0;
+    color: #ef6c00;
+    padding: 2px 5px;
+    font-weight: bold;
+    font-size: 7px;
+}
+
+.report-page .status-failed {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 2px 5px;
+    font-weight: bold;
+    font-size: 7px;
+}
+
+.report-page .rental-status {
+    text-align: center;
+    font-size: 8px;
+}
+
+.report-page .footer {
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 2px solid #e5e5e5;
+    text-align: center;
+    color: #757575;
+    font-size: 8px;
+}
+
+.report-page .footer strong {
+    color: #ff5722;
+}
+
+.report-page .footer-note {
+    margin-top: 5px;
+    font-size: 7px;
+    color: #a0a0a0;
+}
+
+/* Print Helper Utility Classes */
+.report-page .text-center { text-align: center; }
+.report-page .text-danger-bold { color: #d32f2f; font-weight: bold; }
+.report-page .text-xs { font-size: 8px; }
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
     .hero-title {

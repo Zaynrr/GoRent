@@ -2,223 +2,9 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <style>
-        @page {
-            size: A4 landscape;
-            margin: 1.5cm;
-        }
-        
-        body {
-            font-family: Helvetica, Arial, sans-serif;
-            color: #1a1a1a;
-            font-size: 10px;
-            line-height: 1.4;
-        }
-        
-        .header {
-            text-align: center;
-            padding-bottom: 15px;
-            border-bottom: 3px solid #ff5722;
-            margin-bottom: 20px;
-        }
-        
-        .header h1 {
-            color: #ff5722;
-            font-size: 24px;
-            font-weight: bold;
-            margin: 0 0 5px 0;
-        }
-        
-        .header p {
-            color: #757575;
-            font-size: 10px;
-            margin: 2px 0;
-        }
-        
-        .summary-title {
-            color: #ff5722;
-            font-size: 12px;
-            font-weight: bold;
-            margin: 15px 0 8px 0;
-            padding-bottom: 3px;
-            border-bottom: 2px solid #ffe0b2;
-        }
-        
-        .summary-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-        
-        .summary-table td {
-            width: 25%;
-            padding: 10px;
-            text-align: center;
-            border: 1px solid #e5e5e5;
-            vertical-align: middle;
-        }
-        
-        .card-blue { background-color: #e3f2fd; }
-        .card-green { background-color: #e8f5e9; }
-        .card-orange { background-color: #fff3e0; }
-        .card-red { background-color: #ffebee; }
-        
-        .card-label {
-            font-size: 8px;
-            color: #757575;
-            text-transform: uppercase;
-            font-weight: bold;
-            margin-bottom: 3px;
-        }
-        
-        .card-value {
-            font-size: 16px;
-            font-weight: bold;
-            margin-top: 2px;
-        }
-        
-        .card-blue .card-value { color: #1976d2; }
-        .card-green .card-value { color: #2e7d32; }
-        .card-orange .card-value { color: #ef6c00; }
-        .card-red .card-value { color: #c62828; }
-        
-        .filter-info {
-            background-color: #f5f5f7;
-            padding: 6px 10px;
-            margin-bottom: 15px;
-            font-size: 9px;
-            color: #4a4a4a;
-            border: 1px solid #e5e5e5;
-        }
-        
-        .table-title {
-            color: #ff5722;
-            font-size: 12px;
-            font-weight: bold;
-            margin: 15px 0 8px 0;
-            padding-bottom: 3px;
-            border-bottom: 2px solid #ffe0b2;
-        }
-        
-        table.data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 9px;
-        }
-        
-        table.data-table thead {
-            background-color: #ff5722;
-            color: white;
-        }
-        
-        table.data-table th {
-            padding: 8px 4px;
-            text-align: left;
-            font-weight: bold;
-            font-size: 8px;
-            text-transform: uppercase;
-            border: 1px solid #e64a19;
-        }
-        
-        table.data-table td {
-            padding: 6px 4px;
-            border: 1px solid #e5e5e5;
-            vertical-align: top;
-        }
-        
-        .overdue-row td {
-            background-color: #ffebee;
-        }
-        
-        .order-id {
-            font-family: Courier, monospace;
-            font-size: 7px;
-            color: #ff5722;
-            font-weight: bold;
-        }
-        
-        .overdue-badge {
-            background-color: #d32f2f;
-            color: white;
-            padding: 1px 4px;
-            font-size: 6px;
-            font-weight: bold;
-            display: inline-block;
-            margin-top: 2px;
-        }
-        
-        .customer-name {
-            font-weight: bold;
-            color: #1a1a1a;
-            font-size: 9px;
-        }
-        
-        .customer-email {
-            font-size: 7px;
-            color: #757575;
-        }
-        
-        .motor-name {
-            font-weight: bold;
-            font-size: 9px;
-        }
-        
-        .motor-specs {
-            font-size: 7px;
-            color: #757575;
-        }
-        
-        .price {
-            font-weight: bold;
-            color: #ff5722;
-            font-size: 9px;
-        }
-        
-        .status-success {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            padding: 2px 5px;
-            font-weight: bold;
-            font-size: 7px;
-        }
-        
-        .status-pending {
-            background-color: #fff3e0;
-            color: #ef6c00;
-            padding: 2px 5px;
-            font-weight: bold;
-            font-size: 7px;
-        }
-        
-        .status-failed {
-            background-color: #ffebee;
-            color: #c62828;
-            padding: 2px 5px;
-            font-weight: bold;
-            font-size: 7px;
-        }
-        
-        .rental-status {
-            text-align: center;
-            font-size: 8px;
-        }
-        
-        .footer {
-            margin-top: 20px;
-            padding-top: 10px;
-            border-top: 2px solid #e5e5e5;
-            text-align: center;
-            color: #757575;
-            font-size: 8px;
-        }
-        
-        .footer strong {
-            color: #ff5722;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
-
+<body class="report-page">
     <!-- HEADER -->
     <div class="header">
         <h1>GORENT</h1>
@@ -226,13 +12,11 @@
         <p>Dicetak: <strong>{{ current_time }}</strong></p>
     </div>
     
-    <!-- SUMMARY -->
     <div class="summary-title">RINGKASAN</div>
     
     <table class="summary-table">
         <tr>
             {% if report_type == 'damage' %}
-                <!-- KARTU SUMMARY KHUSUS LAPORAN KERUSAKAN -->
                 <td class="card-blue" style="width: 33.3%;">
                     <div class="card-label">Total Transaksi</div>
                     <div class="card-value">{{ total_transaksi }}</div>
@@ -243,10 +27,9 @@
                 </td>
                 <td class="card-red" style="width: 33.3%;">
                     <div class="card-label">Total Denda Kerusakan</div>
-                    <div class="card-value" style="font-size: 14px;">Rp {{ "{:,.0f}".format(total_denda) }}</div>
+                    <div class="card-value text-lg">Rp {{ "{:,.0f}".format(total_denda) }}</div>
                 </td>
             {% else %}
-                <!-- KARTU SUMMARY NORMAL -->
                 <td class="card-blue">
                     <div class="card-label">Total Transaksi</div>
                     <div class="card-value">{{ total_transaksi }}</div>
@@ -261,7 +44,7 @@
                 </td>
                 <td class="card-red">
                     <div class="card-label">Total Pendapatan</div>
-                    <div class="card-value" style="font-size: 12px;">Rp {{ "{:,.0f}".format(total_pendapatan) }}</div>
+                    <div class="card-value text-md">Rp {{ "{:,.0f}".format(total_pendapatan) }}</div>
                 </td>
             {% endif %}
         </tr>
@@ -283,103 +66,97 @@
     
     <!-- TABLE -->
     <div class="table-title">DETAIL TRANSAKSI</div>
-
     <table class="data-table">
-        <tr style="background-color: #ff5722; color: white;">
-            <th width="12%" style="padding: 8px 4px; text-align: left; font-weight: bold; font-size: 8px; border: 1px solid #e64a19;">Order ID</th>
-            <th width="18%" style="padding: 8px 4px; text-align: left; font-weight: bold; font-size: 8px; border: 1px solid #e64a19;">Customer</th>
-            <th width="15%" style="padding: 8px 4px; text-align: left; font-weight: bold; font-size: 8px; border: 1px solid #e64a19;">Nama Motor</th>
-            <th width="10%" style="padding: 8px 4px; text-align: left; font-weight: bold; font-size: 8px; border: 1px solid #e64a19;">Tgl Sewa</th>
-            <th width="10%" style="padding: 8px 4px; text-align: left; font-weight: bold; font-size: 8px; border: 1px solid #e64a19;">Tgl Kembali</th>
-            
-            {% if report_type == 'damage' %}
-                <!-- KOLOM KHUSUS KERUSAKAN -->
-                <th width="15%" style="padding: 8px 4px; text-align: left; font-weight: bold; font-size: 8px; border: 1px solid #e64a19;">Kondisi Motor</th>
-                <th width="12%" style="padding: 8px 4px; text-align: left; font-weight: bold; font-size: 8px; border: 1px solid #e64a19;">Denda</th>
-                <th width="8%" style="padding: 8px 4px; text-align: center; font-weight: bold; font-size: 8px; border: 1px solid #e64a19;">Status Denda</th>
-            {% else %}
-                <!-- KOLOM NORMAL -->
-                <th width="7%" style="padding: 8px 4px; text-align: center; font-weight: bold; font-size: 8px; border: 1px solid #e64a19;">Durasi</th>
-                <th width="12%" style="padding: 8px 4px; text-align: left; font-weight: bold; font-size: 8px; border: 1px solid #e64a19;">Total Harga</th>
-                <th width="10%" style="padding: 8px 4px; text-align: left; font-weight: bold; font-size: 8px; border: 1px solid #e64a19;">Status Bayar</th>
-                <th width="6%" style="padding: 8px 4px; text-align: center; font-weight: bold; font-size: 8px; border: 1px solid #e64a19;">Rental</th>
-            {% endif %}
-        </tr>
-        
-        <!-- DATA ROWS -->
-        {% for t in transactions %}
-        <tr {% if t.is_overdue %}style="background-color: #ffebee;"{% endif %}>
-            <td style="padding: 6px 4px; border: 1px solid #e5e5e5; vertical-align: top;">
-                <div class="order-id">{{ t.order_id }}</div>
-                {% if t.is_overdue %}
-                    <div class="overdue-badge">OVERDUE</div>
+        <thead>
+            <tr>
+                <th width="12%">Order ID</th>
+                <th width="18%">Customer</th>
+                <th width="15%">Nama Motor</th>
+                <th width="10%">Tgl Sewa</th>
+                <th width="10%">Tgl Kembali</th>
+                
+                {% if report_type == 'damage' %}
+                    <th width="15%">Kondisi Motor</th>
+                    <th width="12%">Denda</th>
+                    <th width="8%" class="text-center">Status Denda</th>
+                {% else %}
+                    <th width="7%" class="text-center">Durasi</th>
+                    <th width="12%">Total Harga</th>
+                    <th width="10%">Status Bayar</th>
+                    <th width="6%" class="text-center">Rental</th>
                 {% endif %}
-            </td>
-            <td style="padding: 6px 4px; border: 1px solid #e5e5e5; vertical-align: top;">
-                <div class="customer-name">{{ t.nama_cust }}</div>
-                <div class="customer-email">{{ t.email_cust }}</div>
-            </td>
-            <td style="padding: 6px 4px; border: 1px solid #e5e5e5; vertical-align: top;">
-                <div class="motor-name">{{ t.motor_name }}</div>
-                <div class="motor-specs">{{ t.motor_cc }}cc - {{ t.motor_transmisi }}</div>
-            </td>
-            <td style="padding: 6px 4px; border: 1px solid #e5e5e5;">{{ t.tgl_sewa }}</td>
-            <td style="padding: 6px 4px; border: 1px solid #e5e5e5;">{{ t.tgl_kembali }}</td>
-            
-            {% if report_type == 'damage' %}
-                <!-- ISI KOLOM KHUSUS KERUSAKAN -->
-                <td style="padding: 6px 4px; border: 1px solid #e5e5e5; color: #d32f2f; font-weight: bold;">
-                    {{ t.kondisi_motor }}
-                </td>
-                <td style="padding: 6px 4px; border: 1px solid #e5e5e5;">
-                    <span class="price">Rp {{ "{:,.0f}".format(t.denda_kerusakan) }}</span>
-                </td>
-                <td style="padding: 6px 4px; border: 1px solid #e5e5e5; text-align: center;">
-                    {% if t.status_pembayaran_denda == 'Lunas' %}
-                        <span class="status-success">Lunas</span>
-                    {% else %}
-                        <span class="status-failed">Belum Lunas</span>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in transactions %}
+            <tr {% if t.is_overdue %}class="overdue-row"{% endif %}>
+                <td>
+                    <div class="order-id">{{ t.order_id }}</div>
+                    {% if t.is_overdue %}
+                        <div class="overdue-badge">OVERDUE</div>
                     {% endif %}
                 </td>
-            {% else %}
-                <!-- ISI KOLOM NORMAL -->
-                <td style="padding: 6px 4px; border: 1px solid #e5e5e5; text-align: center;">{{ t.total_hari }} hari</td>
-                <td style="padding: 6px 4px; border: 1px solid #e5e5e5;">
-                    <span class="price">Rp {{ "{:,.0f}".format(t.total_harga) }}</span>
+                <td>
+                    <div class="customer-name">{{ t.nama_cust }}</div>
+                    <div class="customer-email">{{ t.email_cust }}</div>
                 </td>
-                <td style="padding: 6px 4px; border: 1px solid #e5e5e5;">
-                    {% if t.status_pembayaran == 'success' %}
-                        <span class="status-success">Sukses</span>
-                    {% elif t.status_pembayaran == 'pending' %}
-                        <span class="status-pending">Pending</span>
-                    {% elif t.status_pembayaran == 'failed' %}
-                        <span class="status-failed">Gagal</span>
-                    {% else %}
-                        {{ t.status_pembayaran }}
-                    {% endif %}
+                <td>
+                    <div class="motor-name">{{ t.motor_name }}</div>
+                    <div class="motor-specs">{{ t.motor_cc }}cc - {{ t.motor_transmisi }}</div>
                 </td>
-                <td style="padding: 6px 4px; border: 1px solid #e5e5e5; text-align: center; font-size: 8px;">
-                    {% if t.status_rental == 'Disewa' %}
-                        Disewa
-                    {% elif t.status_rental == 'Dikembalikan' %}
-                        Kembali
-                    {% else %}
-                        Menunggu
-                    {% endif %}
-                </td>
-            {% endif %}
-        </tr>
-        {% endfor %}
+                <td>{{ t.tgl_sewa }}</td>
+                <td>{{ t.tgl_kembali }}</td>
+
+                {% if report_type == 'damage' %}
+                    <td class="text-danger-bold">
+                        {{ t.kondisi_motor }}
+                    </td>
+                    <td>
+                        <span class="price">Rp {{ "{:,.0f}".format(t.denda_kerusakan) }}</span>
+                    </td>
+                    <td class="text-center">
+                        {% if t.status_pembayaran_denda == 'Lunas' %}
+                            <span class="status-success">Lunas</span>
+                        {% else %}
+                            <span class="status-failed">Belum Lunas</span>
+                        {% endif %}
+                    </td>
+                {% else %}
+                    <td class="text-center">{{ t.total_hari }} hari</td>
+                    <td>
+                        <span class="price">Rp {{ "{:,.0f}".format(t.total_harga) }}</span>
+                    </td>
+                    <td>
+                        {% if t.status_pembayaran == 'success' %}
+                            <span class="status-success">Sukses</span>
+                        {% elif t.status_pembayaran == 'pending' %}
+                            <span class="status-pending">Pending</span>
+                        {% elif t.status_pembayaran == 'failed' %}
+                            <span class="status-failed">Gagal</span>
+                        {% else %}
+                            {{ t.status_pembayaran }}
+                        {% endif %}
+                    </td>
+                    <td class="text-center text-xs">
+                        {% if t.status_rental == 'Disewa' %}
+                            Disewa
+                        {% elif t.status_rental == 'Dikembalikan' %}
+                            Kembali
+                        {% else %}
+                            Menunggu
+                        {% endif %}
+                    </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
     
     <!-- FOOTER -->
     <div class="footer">
         <p><strong>GoRent - Sewa Motor Premium Terpercaya</strong></p>
         <p>Jl. Contoh No. 123, Jakarta | Telp: 0812-3456-7890 | Email: info@gorent.id</p>
-        <p style="margin-top: 5px; font-size: 7px; color: #a0a0a0;">
-            Dokumen ini digenerate secara otomatis oleh sistem GoRent
-        </p>
+        <p class="footer-note">Dokumen ini digenerate secara otomatis oleh sistem GoRent</p>
     </div>
-
 </body>
 </html>

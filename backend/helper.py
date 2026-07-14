@@ -1,5 +1,4 @@
 import traceback
-
 import requests
 import cloudinary
 import cloudinary.uploader
