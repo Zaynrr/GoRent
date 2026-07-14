@@ -142,7 +142,7 @@
                     <td>{{ motor.merk.nama_merk if motor.merk else '-' }}</td>
                     <td>{{ motor.cc_motor }} cc</td>
                     <td>{{ motor.transmisi }}</td>
-                    <td><strong>Rp {{ "{:,.0f}".format(motor.harga_sewa) }}</strong>/day</td>
+                    <td><strong>Rp {{ "{:,.0f}".format(motor.harga_sewa) }}</strong>/hari</td>
                     <td>
                         {% if not motor.is_active %}
                             <span class="admin-status hidden">
