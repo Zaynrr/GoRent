@@ -483,19 +483,13 @@ def admin_transaction_update(id):
         value = data.get('value')
         
         transaksi = Transaksi.query.get_or_404(id)
+        motor = Motor.query.get(transaksi.id_motor)
         
         # Validasi field yang boleh diupdate
         allowed_status = ['kondisi_motor', 'denda_kerusakan', 'status_rental', 'status_verifikasi_ktp', 'status_pembayaran_denda']
         
         if field not in allowed_status:
             return jsonify({'success': False, 'error': 'Field tidak valid'}), 400
-        
-        if field == 'status_rental' and value == 'Dikembalikan':
-            if transaksi.status_verifikasi_ktp != 'Verified':
-                return jsonify({
-                    'success': False, 
-                    'error': 'KTP belum diverifikasi! Harap verifikasi KTP terlebih dahulu.'
-                }), 400
         
         # Tidak bisa ubah kondisi & denda jika motor masih status disewa
         if field in ['kondisi_motor', 'denda_kerusakan', 'status_pembayaran_denda']:
@@ -504,28 +498,54 @@ def admin_transaction_update(id):
                     'success': False, 
                     'error': 'Motor masih disewa! Ubah status rental menjadi "Dikembalikan" terlebih dahulu.'
                 }), 400
-
-        if field == 'denda_kerusakan':
-            transaksi.denda_kerusakan = float(value) if value else 0
-        else:
-            setattr(transaksi, field, value)
+        
+        # Jika mengembalikan motor, pastikan KTP sudah diverifikasi
+        if field == 'status_rental' and value == 'Dikembalikan':
+            if transaksi.status_verifikasi_ktp != 'Verified':
+                return jsonify({
+                    'success': False, 
+                    'error': 'KTP belum diverifikasi! Harap verifikasi KTP terlebih dahulu.'
+                }), 400
         
         # Jika status rental berubah jadi Dikembalikan, update status motor
-        if field == 'status_rental' and value == 'Dikembalikan':
-            motor = Motor.query.get(transaksi.id_motor)
+        if field == 'status_rental':
+            transaksi.status_rental = value
+            
+            # Eksekusi logika tambahan saat motor "Dikembalikan"
+            if value == 'Dikembalikan':
+                if motor:
+                    # Cek kondisi motor saat ini
+                    if transaksi.kondisi_motor != 'Tidak Ada Kerusakan':
+                        motor.status_motor = 'Maintenance'
+                    else:
+                        motor.status_motor = 'Tersedia'
+                        
+                # Hapus file KTP dari Cloudinary & Database
+                if transaksi.KTP and transaksi.KTP != '-':
+                    try:
+                        public_id = extract_public_id_from_url(transaksi.KTP)
+                        if public_id:
+                            delete_from_cloudinary(public_id)
+                    except Exception as e:
+                        print(f"⚠️ Error hapus KTP saat dikembalikan: {str(e)}")
+                    
+                    transaksi.KTP = '-'
+        elif field == 'kondisi_motor':
+            transaksi.kondisi_motor = value
+            
+            # Update status motor berdasarkan kondisinya
             if motor:
-                motor.status_motor = 'Tersedia'
-                
-            # Hapus ktp dari Cloudinary
-            if transaksi.KTP and transaksi.KTP != '-':
-                try:
-                    public_id = extract_public_id_from_url(transaksi.KTP)
-                    if public_id:
-                        delete_from_cloudinary(public_id)
-                except Exception as e:
-                    print(f"⚠️ Error hapus KTP saat dikembalikan: {str(e)}")
-                
-                transaksi.KTP = '-'
+                if value != 'Tidak Ada Kerusakan':
+                    motor.status_motor = 'Maintenance'
+                else:
+                    # Jika kondisi diubah jadi "Tidak Ada Kerusakan" (misal admin salah klik)
+                    if transaksi.status_rental == 'Dikembalikan':
+                        motor.status_motor = 'Tersedia'
+        elif field == 'denda_kerusakan':
+            transaksi.denda_kerusakan = float(value) if value else 0
+        else:
+            # Untuk field lainnya (status_verifikasi_ktp, status_pembayaran_denda)
+            setattr(transaksi, field, value)
         
         db.session.commit()
         
