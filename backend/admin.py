@@ -528,10 +528,18 @@ def admin_transaction_update(id):
                         print(f"⚠️ Error hapus KTP saat dikembalikan: {str(e)}")
                     
                     transaksi.KTP = '-'
+        elif field == 'kondisi_motor':
+            transaksi.kondisi_motor = value
+            
+            if motor:
+                if value != 'Tidak Ada Kerusakan':
+                    motor.status_motor = 'Maintenance'
+                else:
+                    if transaksi.status_rental == 'Dikembalikan':
+                        motor.status_motor = 'Tersedia'
         elif field == 'denda_kerusakan':
             transaksi.denda_kerusakan = float(value) if value else 0
         else:
-            # Untuk field lainnya (status_verifikasi_ktp, status_pembayaran_denda)
             setattr(transaksi, field, value)
         
         db.session.commit()
