@@ -511,10 +511,8 @@ def admin_transaction_update(id):
         if field == 'status_rental':
             transaksi.status_rental = value
             
-            # Eksekusi logika tambahan saat motor "Dikembalikan"
             if value == 'Dikembalikan':
                 if motor:
-                    # Cek kondisi motor saat ini
                     if transaksi.kondisi_motor != 'Tidak Ada Kerusakan':
                         motor.status_motor = 'Maintenance'
                     else:
@@ -530,17 +528,6 @@ def admin_transaction_update(id):
                         print(f"⚠️ Error hapus KTP saat dikembalikan: {str(e)}")
                     
                     transaksi.KTP = '-'
-        elif field == 'kondisi_motor':
-            transaksi.kondisi_motor = value
-            
-            # Update status motor berdasarkan kondisinya
-            if motor:
-                if value != 'Tidak Ada Kerusakan':
-                    motor.status_motor = 'Maintenance'
-                else:
-                    # Jika kondisi diubah jadi "Tidak Ada Kerusakan" (misal admin salah klik)
-                    if transaksi.status_rental == 'Dikembalikan':
-                        motor.status_motor = 'Tersedia'
         elif field == 'denda_kerusakan':
             transaksi.denda_kerusakan = float(value) if value else 0
         else:
