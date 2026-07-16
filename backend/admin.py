@@ -628,7 +628,7 @@ def export_transaksi_pdf():
                 'status_pembayaran_denda': getattr(t, 'status_pembayaran_denda', '-')
             })
         
-        # Render HTML Content berdasarkan jenis filter
+        # jenis filter
         if status_filter == 'damage':
             total_kerusakan = len(transactions)
             total_denda = sum(t['denda_kerusakan'] for t in transactions)

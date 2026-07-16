@@ -60,7 +60,7 @@ def payment_success():
     
     if not order_id:
         flash('Order ID tidak ditemukan', 'danger')
-        return redirect(url_for('index'))
+        return redirect(url_for('customer.index'))
     
     transaksi = Transaksi.query.filter_by(order_id=order_id).first()
     

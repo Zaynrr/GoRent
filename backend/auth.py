@@ -32,7 +32,6 @@ def register():
         if username_exist:
             flash('Username sudah digunakan! Silakan pilih username yang lain.', 'danger')
             return redirect(url_for('auth.register'))
-        
         try:
             password_hash = generate_password_hash(password, method='pbkdf2:sha256')
         
